@@ -1,0 +1,16 @@
+# Secrets — only .env.example belongs in git
+.env
+
+# Virtualenv
+.venv/
+
+# Server runtime artifacts
+server.log
+.server.pid
+
+# Python
+__pycache__/
+*.pyc
+
+# Long-term memory database
+memory.db
