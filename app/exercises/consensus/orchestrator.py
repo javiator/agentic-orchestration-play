@@ -12,7 +12,7 @@ Base pipeline (always on):
 Three optional layers, each toggleable per run so they can be studied
 independently (see the matching modules for the deep commentary):
 
-  * TOOL USE (options.use_tools, agent_loop.py + tools.py) — agents become
+  * TOOL USE (options.use_tools, core/agent_loop.py + core/tools.py) — agents become
     ReAct loops that can search the web, fetch pages, and search attached
     documents before answering.
   * REBUTTAL ROUND (options.rebuttal, stage 4 below) — a second multi-agent
@@ -35,8 +35,9 @@ from typing import Any
 
 import litellm
 
-from .config import AGENT_TIMEOUT, MAX_TOKENS, ModelSpec
-from .agent_loop import run_agent_loop
+from app.core.agent_loop import run_agent_loop
+from app.core.config import AGENT_TIMEOUT, MAX_TOKENS, ModelSpec
+
 from .memory import format_recalled, recall, remember
 
 # Keep LiteLLM quiet; errors are surfaced through our own events.
@@ -161,7 +162,7 @@ async def _run_research_agent(
     """STAGE 2 — INDEPENDENT EXECUTION.
 
     With tools off: one isolated model call. With tools on: an isolated
-    ReAct loop (see agent_loop.py) — still independent, because each agent
+    ReAct loop (see core/agent_loop.py) — still independent, because each agent
     has its own conversation and never sees another agent's output.
     Failures and timeouts are caught here so one bad provider can't sink
     the whole run.

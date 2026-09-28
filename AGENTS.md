@@ -7,6 +7,16 @@ are layered on top, each toggleable per run: tool use (ReAct loop), a rebuttal
 round (agents defend/revise against each other's claims), and memory (session
 follow-ups + long-term SQLite recall).
 
+The repo is a playground of **exercises**: each is a self-contained module in
+`app/exercises/<name>/` mounted at `/<slug>/`, sharing the building blocks in
+`app/core/`. The consensus app above is the `consensus` exercise. The root
+app (`app/main.py`) auto-discovers exercises and serves a landing page at `/`
+to pick one; every exercise page includes `/static/nav.js` (home link +
+switcher). To add one: `cp -r app/exercises/_template app/exercises/<name>`,
+set a unique `slug` in its `__init__.py`, restart. Folders starting with `_`
+are skipped. Exercise pages use relative URLs (`api/...`, `static/...`) so the
+slug lives only in `EXERCISE`.
+
 ## Run / verify
 
 ```bash
@@ -20,18 +30,18 @@ a real query end-to-end:
 
 ```bash
 # toggles/session are optional form fields; booleans as "true"/"false"
-curl -s -X POST localhost:8000/api/query -F 'query=...' \
+curl -s -X POST localhost:8000/consensus/api/query -F 'query=...' \
   -F 'use_tools=true' -F 'rebuttal=true' -F 'use_memory=true' -F 'session_id=...'
 # → {"job_id": ..., "session_id": ...}
-curl -s -N "localhost:8000/api/stream/<job_id>?session_id=<sid>&query=<q>"   # SSE until done/error
+curl -s -N "localhost:8000/consensus/api/stream/<job_id>?session_id=<sid>&query=<q>"   # SSE until done/error
 ```
 
 ## Architecture (read in this order)
 
-1. **`app/config.py`** — models are `.env` data, never code. `ModelSpec` =
+1. **`app/core/config.py`** — models are `.env` data, never code. `ModelSpec` =
    LiteLLM model string + optional `api_base`/`api_key` override. Research
    models are `MODEL_1..N` (contiguous numbering — a gap stops the scan).
-2. **`app/orchestrator.py`** — the pipeline, `run_consensus(..., options)`:
+2. **`app/exercises/consensus/orchestrator.py`** — the pipeline, `run_consensus(..., options)`:
    - `RunOptions` = per-run toggles (`use_tools`, `rebuttal`, `use_memory`)
      plus `history` (session turns).
    - `_build_user_message()` builds ONE message (recalled memories + session
@@ -60,28 +70,34 @@ curl -s -N "localhost:8000/api/stream/<job_id>?session_id=<sid>&query=<q>"   # S
      terminates with `done` or `error` — preserve that invariant or the SSE
      reader hangs. `done` carries `results`, `verdict`, and (when rebuttal
      ran) `initial_verdict` + `rebuttal_results`.
-3. **`app/agent_loop.py`** — the ReAct loop, heavily commented: completion
+3. **`app/core/agent_loop.py`** — the ReAct loop, heavily commented: completion
    with `tools=` → if `tool_calls`, execute + append `role:"tool"` results →
    repeat. The final allowed iteration passes `tools=None` to force an
    answer. The `messages` list is the agent's working memory.
-4. **`app/tools.py`** — OpenAI-style schemas + async executors
+4. **`app/core/tools.py`** — OpenAI-style schemas + async executors
    (`search_web`/ddgs, `fetch_url`/httpx, `search_documents`/keyword chunks).
    Executors never raise — errors return as text the model can react to.
    `search_documents` is only offered when files are attached. To add a tool:
    schema in `tool_schemas()`, branch in `execute_tool()` — nothing else.
-5. **`app/memory.py`** — SQLite (`memory.db` at repo root, gitignored).
+5. **`app/exercises/consensus/memory.py`** — SQLite (`memory.db` at repo
+   root, gitignored). Verdict-shaped, so it lives with the consensus exercise.
    Keyword-overlap `recall()` by design; swap in embeddings without touching
    callers. Recalled items are framed as "verify before relying on them".
-6. **`app/main.py`** — FastAPI. Parses uploads, resolves the session
+6. **`app/exercises/consensus/routes.py`** — FastAPI router mounted at
+   `/consensus/`. Serves the page, parses uploads, resolves the session
    (`_sessions` dict: session_id → prior turns), spawns `run_consensus` as a
    task, relays the queue as SSE. The SSE relay appends the finished turn to
    session memory when it sees `done`. Both stores are in-memory dicts —
    single-process, single-user by design.
-7. **`app/files.py`** — upload parsing (txt/md/csv/pdf), truncated at
+7. **`app/core/files.py`** — upload parsing (txt/md/csv/pdf), truncated at
    `MAX_CHARS_PER_FILE`.
-8. **`app/static/`** — vanilla HTML/JS/CSS, intentionally no framework or
-   build step. `app.js` mirrors the event types above; if you add an event
-   type, handle it in `es.onmessage` there.
+8. **`app/exercises/consensus/static/`** — vanilla HTML/JS/CSS, intentionally
+   no framework or build step. `app.js` mirrors the event types above; if you
+   add an event type, handle it in `es.onmessage` there. Shared look
+   (`base.css`), nav bar and landing page live in `app/static/`.
+9. **`app/main.py`** + **`app/exercises/__init__.py`** + **`app/core/exercise.py`**
+   — root app, discovery, and the `Exercise` contract each exercise exports
+   as `EXERCISE`.
 
 ## Conventions & gotchas
 
@@ -109,9 +125,11 @@ curl -s -N "localhost:8000/api/stream/<job_id>?session_id=<sid>&query=<q>"   # S
 ## Natural extension points
 
 - More agents: add `MODEL_4=...` in `.env` — everything else adapts.
-- New tools: one schema + one dispatch branch in `app/tools.py` (the pattern
-  scales to APIs, code execution, databases...).
-- Embeddings-based memory: replace `recall()` in `app/memory.py`.
+- New exercises: copy `app/exercises/_template` (see top of this file).
+- New tools: one schema + one dispatch branch in `app/core/tools.py` (the
+  pattern scales to APIs, code execution, databases...).
+- Embeddings-based memory: replace `recall()` in
+  `app/exercises/consensus/memory.py`.
 - Streaming tokens (not just per-agent completion): switch the agent call to
   `litellm.acompletion(stream=True)` and emit incremental events.
 - Persistence: sessions currently die with the process; move `_sessions`
