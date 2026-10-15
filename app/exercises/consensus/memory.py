@@ -3,9 +3,9 @@
 Three kinds of memory exist in this app; only the third lives in this file:
 
   1. Working memory  — an agent's own tool-call transcript inside one loop
-                       (the `messages` list in agent_loop.py).
+                       (the `messages` list in core/agent_loop.py).
   2. Session memory  — prior question/answer turns of the current research
-                       session (kept in RAM in main.py, injected into the
+                       session (kept in RAM in routes.py, injected into the
                        shared context each follow-up).
   3. Long-term memory — THIS: past sessions persisted to SQLite, recalled by
                        keyword relevance when a new query arrives.
@@ -22,7 +22,8 @@ import time
 from pathlib import Path
 from typing import Any
 
-DB_PATH = Path(__file__).parent.parent / "memory.db"
+# Repo root (app/exercises/consensus/memory.py → parents[3]).
+DB_PATH = Path(__file__).parents[3] / "memory.db"
 
 
 def _connect() -> sqlite3.Connection:

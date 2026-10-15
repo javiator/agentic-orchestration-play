@@ -2,15 +2,17 @@
 // toggles + session id), then consume the SSE stream and update the page
 // live: per-model panels, tool-call research traces, rebuttal round, judge
 // verdicts, recalled memories.
-
-const $ = (id) => document.getElementById(id);
+//
+// API URLs are relative ("api/...") so they resolve under this exercise's
+// mount point (/consensus/), wherever the root app puts it.
+// $, esc, mdLite, show, hide come from /static/util.js.
 
 let selectedFiles = [];
 let sessionId = "";       // set after the first run; sent back for follow-ups
 let sessionTurns = [];    // [{query, merged}] rendered in the history card
 
 // Show configured models before the first query so the page explains itself.
-fetch("/api/models").then((r) => r.json()).then(({ models, judge }) => {
+fetch("api/models").then((r) => r.json()).then(({ models, judge }) => {
   $("model-count").textContent = String(models.length);
   $("judge-label").textContent = `Judge: ${judge}`;
 });
@@ -53,7 +55,7 @@ async function runQuery() {
 
   let job;
   try {
-    const res = await fetch("/api/query", { method: "POST", body: form });
+    const res = await fetch("api/query", { method: "POST", body: form });
     if (!res.ok) throw new Error((await res.json()).detail || res.statusText);
     job = await res.json();
   } catch (err) {
@@ -70,7 +72,7 @@ async function runQuery() {
 
   // SSE: one event per orchestration milestone; close on done/error.
   const es = new EventSource(
-    `/api/stream/${job.job_id}?session_id=${sessionId}&query=${encodeURIComponent(query)}`
+    `api/stream/${job.job_id}?session_id=${sessionId}&query=${encodeURIComponent(query)}`
   );
   es.onmessage = (msg) => {
     const ev = JSON.parse(msg.data);
@@ -286,18 +288,3 @@ function showError(message) {
   $("error-card").textContent = message;
   show("error-card");
 }
-
-// Minimal markdown: escape HTML, then render **bold** and headings only —
-// enough for judge output without pulling in a renderer dependency.
-function mdLite(text) {
-  return esc(text)
-    .replace(/^#{1,4}\s+(.+)$/gm, "<strong>$1</strong>")
-    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
-}
-function esc(s) {
-  return String(s).replace(/[&<>"']/g, (c) =>
-    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])
-  );
-}
-function show(id) { $(id).classList.remove("hidden"); }
-function hide(id) { $(id).classList.add("hidden"); }

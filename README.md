@@ -39,17 +39,17 @@ disagreed.
 Three classic agent concepts are layered on top of the base pipeline. Each has
 a checkbox in the UI so you can study one at a time; all can coexist.
 
-- **Tool use** (`app/tools.py`, `app/agent_loop.py`) — each agent becomes a
+- **Tool use** (`app/core/tools.py`, `app/core/agent_loop.py`) — each agent becomes a
   ReAct loop: it can call `search_web` (DuckDuckGo), `fetch_url`, and
   `search_documents` (over your attachments), observe results, and iterate
   until it answers (capped by `MAX_TOOL_ITERATIONS`). Every tool call streams
   to the UI as a per-agent research trace, so you can watch different models
   research differently.
-- **Rebuttal round** (stage 4 in `app/orchestrator.py`) — if the round-1
+- **Rebuttal round** (stage 4 in `app/exercises/consensus/orchestrator.py`) — if the round-1
   judge finds disagreements, each agent is shown the disputed points and the
   other models' claims, defends or revises in parallel, and the judge
   re-synthesizes. The UI shows "N disagreements → M remaining after rebuttal".
-- **Memory** (`app/memory.py` + sessions in `app/main.py`) — three layers:
+- **Memory** (`memory.py` + sessions in `routes.py`, both in `app/exercises/consensus/`) — three layers:
   *working memory* (an agent's own tool-call transcript within one loop),
   *session memory* (ask follow-up questions; prior turns are injected into
   every agent's context), and *long-term memory* (every verdict is stored in
@@ -58,18 +58,24 @@ a checkbox in the UI so you can study one at a time; all can coexist.
 
 ## Code tour
 
+The repo is a playground of exercises: the landing page at `/` lists every
+module in `app/exercises/` (this consensus app is `consensus`, served at
+`/consensus/`); shared building blocks live in `app/core/`. Start a new one
+with `cp -r app/exercises/_template app/exercises/<name>` and a unique slug.
+
 | File | What it does |
 |---|---|
-| `app/orchestrator.py` | The core. Commented stages: **fan-out** (`asyncio.gather` launches all agents at once), **independent execution** (each agent isolated, with its own timeout/error capture), **judge synthesis** (a separate model call that returns JSON: merged answer, disagreements, agreement summary, omissions), plus the optional **rebuttal round** and memory recall/write hooks. `RunOptions` carries the per-run feature toggles. |
-| `app/agent_loop.py` | The ReAct tool loop (used when tool use is on): call model → execute requested tools → append results → repeat until a final answer; last iteration withholds tools to force an answer. |
-| `app/tools.py` | Tool schemas + executors: `search_web` (DuckDuckGo via ddgs), `fetch_url` (httpx + HTML stripping), `search_documents` (keyword retrieval over attachments). |
-| `app/memory.py` | Long-term memory: SQLite store of past verdicts, keyword `recall()`, and the context block injected when memory is enabled. |
-| `app/config.py` | Env-driven model layer: reads `MODEL_1..N` + `JUDGE_MODEL` (LiteLLM model strings) and optional per-model `_API_BASE`/`_API_KEY` overrides. |
-| `app/main.py` | FastAPI layer. `POST /api/query` (multipart: query, context, files, toggles, session_id) returns a job id; `GET /api/stream/{job_id}` relays orchestrator events as SSE. Also owns session memory (follow-up turns). |
-| `app/files.py` | Parses uploads (txt/md/csv as text, pdf via pypdf); parsed text goes into the one shared user message every agent receives. |
-| `app/static/` | No-build-step UI: `index.html` + `app.js` (submits the form, consumes SSE, renders panels/traces/rounds/memories) + `style.css`. |
+| `app/main.py` | Root app: auto-discovers exercises, mounts each at `/<slug>/`, serves the landing page and `/api/exercises`. |
+| `app/exercises/consensus/orchestrator.py` | The core. Commented stages: **fan-out** (`asyncio.gather` launches all agents at once), **independent execution** (each agent isolated, with its own timeout/error capture), **judge synthesis** (a separate model call that returns JSON: merged answer, disagreements, agreement summary, omissions), plus the optional **rebuttal round** and memory recall/write hooks. `RunOptions` carries the per-run feature toggles. |
+| `app/core/agent_loop.py` | The ReAct tool loop (used when tool use is on): call model → execute requested tools → append results → repeat until a final answer; last iteration withholds tools to force an answer. |
+| `app/core/tools.py` | Tool schemas + executors: `search_web` (DuckDuckGo via ddgs), `fetch_url` (httpx + HTML stripping), `search_documents` (keyword retrieval over attachments). |
+| `app/exercises/consensus/memory.py` | Long-term memory: SQLite store of past verdicts, keyword `recall()`, and the context block injected when memory is enabled. |
+| `app/core/config.py` | Env-driven model layer: reads `MODEL_1..N` + `JUDGE_MODEL` (LiteLLM model strings) and optional per-model `_API_BASE`/`_API_KEY` overrides. |
+| `app/exercises/consensus/routes.py` | FastAPI router at `/consensus/`. `POST api/query` (multipart: query, context, files, toggles, session_id) returns a job id; `GET api/stream/{job_id}` relays orchestrator events as SSE. Also owns session memory (follow-up turns). |
+| `app/core/files.py` | Parses uploads (txt/md/csv as text, pdf via pypdf); parsed text goes into the one shared user message every agent receives. |
+| `app/exercises/consensus/static/` | No-build-step UI: `index.html` + `app.js` (submits the form, consumes SSE, renders panels/traces/rounds/memories) + `style.css`. Shared `base.css`, nav bar and landing page are in `app/static/`. |
 
-A query flows: browser form → `POST /api/query` → background `run_consensus()`
+A query flows: browser form → `POST /consensus/api/query` → background `run_consensus()`
 task pushes events onto an `asyncio.Queue` → SSE relays them → UI flips each
 model panel from pulsing to green/red as its agent finishes, then renders the
 judge's verdict.
@@ -90,9 +96,12 @@ cp .env.example .env
 ```
 
 `PORT=9000 ./start.sh` to use another port. Logs go to `server.log`.
+No API keys yet? `MOCK_MODELS=true ./start.sh` runs every exercise with canned
+model replies and fake tool results, so you can explore the flows for free.
 (Manual alternative: `.venv/bin/uvicorn app.main:app --port 8000`.)
 
-Open http://localhost:8000 — type a question, optionally add free-text context
+Open http://localhost:8000, pick **Multi-Model Research Consensus** (or go
+straight to http://localhost:8000/consensus/) — type a question, optionally add free-text context
 and attach files (txt/md/csv/pdf; parsed and given identically to every agent
 and the judge), and run. You'll see:
 
@@ -113,4 +122,9 @@ and the judge), and run. You'll see:
 | `AGENT_TIMEOUT` | Per-agent timeout in seconds (default 120; applies per model call inside the tool loop) |
 | `MAX_TOKENS` | Cap for research answers and judge synthesis (default 6000) |
 | `MAX_TOOL_ITERATIONS` | Max reason→act→observe cycles per agent with tool use on (default 6) |
+| `SUPERVISOR_MODEL` | Supervisor exercise: the model that delegates (default: `JUDGE_MODEL`) |
+| `MAX_SUPERVISOR_TURNS` | Supervisor exercise: max decisions per run; the last must finish (default 8) |
+| `GRADER_MODEL` | Eval exercise: the LLM grader (default: `JUDGE_MODEL`) |
+| `EVAL_CONCURRENCY` | Eval exercise: (target, question) pairs run at once (default 2) |
+| `MOCK_MODELS` | `true` = canned replies + fake tools, no keys or network (default false) |
 | Provider keys | `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GEMINI_API_KEY`, … as your models require |

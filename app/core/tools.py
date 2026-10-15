@@ -19,6 +19,8 @@ from typing import Any
 
 import httpx
 
+from .config import MOCK_MODELS
+
 MAX_TOOL_RESULT_CHARS = 6_000  # keep any single tool result from flooding context
 
 
@@ -161,6 +163,9 @@ async def execute_tool(name: str, arguments: str, files: list[dict[str, str]]) -
         args: dict[str, Any] = json.loads(arguments or "{}")
     except json.JSONDecodeError:
         return f"Could not parse tool arguments: {arguments!r}"
+
+    if MOCK_MODELS:  # no network in mock mode
+        return f"(mock {name} result for {json.dumps(args)})"
 
     if name == "search_web":
         result = await _search_web(str(args.get("query", "")))

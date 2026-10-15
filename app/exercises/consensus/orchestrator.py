@@ -12,7 +12,7 @@ Base pipeline (always on):
 Three optional layers, each toggleable per run so they can be studied
 independently (see the matching modules for the deep commentary):
 
-  * TOOL USE (options.use_tools, agent_loop.py + tools.py) — agents become
+  * TOOL USE (options.use_tools, core/agent_loop.py + core/tools.py) — agents become
     ReAct loops that can search the web, fetch pages, and search attached
     documents before answering.
   * REBUTTAL ROUND (options.rebuttal, stage 4 below) — a second multi-agent
@@ -33,14 +33,11 @@ import time
 from dataclasses import dataclass, field
 from typing import Any
 
-import litellm
+from app.core.agent_loop import run_agent_loop
+from app.core.config import ModelSpec
+from app.core.llm import complete
 
-from .config import AGENT_TIMEOUT, MAX_TOKENS, ModelSpec
-from .agent_loop import run_agent_loop
 from .memory import format_recalled, recall, remember
-
-# Keep LiteLLM quiet; errors are surfaced through our own events.
-litellm.suppress_debug_info = True
 
 
 @dataclass
@@ -50,6 +47,9 @@ class RunOptions:
     use_tools: bool = False
     rebuttal: bool = False
     use_memory: bool = False
+    # Write the verdict to long-term memory (off for headless/eval runs so
+    # benchmark questions don't pollute what real sessions recall).
+    remember: bool = True
     # Prior turns of this session: [{"query": ..., "merged_answer": ...}].
     # Session memory — distinct from long-term memory (past sessions).
     history: list[dict[str, str]] = field(default_factory=list)
@@ -161,7 +161,7 @@ async def _run_research_agent(
     """STAGE 2 — INDEPENDENT EXECUTION.
 
     With tools off: one isolated model call. With tools on: an isolated
-    ReAct loop (see agent_loop.py) — still independent, because each agent
+    ReAct loop (see core/agent_loop.py) — still independent, because each agent
     has its own conversation and never sees another agent's output.
     Failures and timeouts are caught here so one bad provider can't sink
     the whole run.
@@ -177,21 +177,12 @@ async def _run_research_agent(
         if use_tools:
             result = await run_agent_loop(spec, messages, files, events, index, phase="research")
         else:
-            response = await asyncio.wait_for(
-                litellm.acompletion(
-                    model=spec.name,
-                    api_base=spec.api_base,
-                    api_key=spec.api_key,
-                    max_tokens=MAX_TOKENS,
-                    messages=messages,
-                ),
-                timeout=AGENT_TIMEOUT,
-            )
+            reply = await complete(spec, messages)
             result = {
                 "index": index,
                 "model": spec.label,
                 "ok": True,
-                "answer": response.choices[0].message.content or "",
+                "answer": reply.content,
                 "latency": round(time.perf_counter() - started, 2),
                 "trace": [],
             }
@@ -239,6 +230,34 @@ def _parse_judge_json(raw: str) -> dict[str, Any]:
     }
 
 
+def _mock_verdict(messages: list[dict[str, Any]], tools: Any) -> str:
+    """Mock-mode judge (MOCK_MODELS=true): a valid verdict built from the model
+    names in the prompt — one disagreement in round 1, resolved in round 2, so
+    every part of the UI (including the rebuttal summary) gets exercised."""
+    prompt = messages[-1]["content"]
+    names = re.findall(r'=== Answer from model "([^"]+)" ===', prompt)
+    revised = "REVISED answers" in prompt
+    disagreements = [] if revised or len(names) < 2 else [
+        {
+            "topic": "(mock) Which factor matters most",
+            "positions": [
+                {"model": names[0], "claim": "(mock) Cost is the deciding factor."},
+                {"model": names[1], "claim": "(mock) Accuracy outweighs cost."},
+            ],
+        }
+    ]
+    return json.dumps(
+        {
+            "merged_answer": f"**(mock) Merged answer** drawing on {', '.join(names)} "
+            f"(per {', '.join(names)}).",
+            "disagreements": disagreements,
+            "agreement_summary": "(mock) Resolved after rebuttal." if revised
+            else "(mock) Broadly aligned.",
+            "omissions": None,
+        }
+    )
+
+
 async def _run_judge(
     spec: ModelSpec,
     user_message: str,
@@ -271,17 +290,16 @@ async def _run_judge(
 
     await events.put({"type": "judge_started", "model": spec.label, "round": round_no})
     started = time.perf_counter()
-    response = await litellm.acompletion(
-        model=spec.name,
-        api_base=spec.api_base,
-        api_key=spec.api_key,
-        max_tokens=MAX_TOKENS,
-        messages=[
+    reply = await complete(
+        spec,
+        [
             {"role": "system", "content": JUDGE_SYSTEM},
             {"role": "user", "content": "\n\n".join(blocks)},
         ],
+        timeout=None,
+        mock=_mock_verdict,
     )
-    verdict = _parse_judge_json(response.choices[0].message.content or "")
+    verdict = _parse_judge_json(reply.content)
     verdict["judge_model"] = spec.label
     verdict["judge_latency"] = round(time.perf_counter() - started, 2)
     verdict["round"] = round_no
@@ -314,31 +332,25 @@ async def _run_rebuttal_agent(
         {"type": "agent_started", "index": index, "model": spec.label, "phase": "rebuttal"}
     )
     try:
-        response = await asyncio.wait_for(
-            litellm.acompletion(
-                model=spec.name,
-                api_base=spec.api_base,
-                api_key=spec.api_key,
-                max_tokens=MAX_TOKENS,
-                messages=[
-                    {"role": "system", "content": REBUTTAL_SYSTEM},
-                    {
-                        "role": "user",
-                        "content": (
-                            f"{user_message}\n\n"
-                            f"YOUR previous answer:\n{original_answer}\n\n"
-                            f"The judge's disagreement report:\n{disagreement_block}"
-                        ),
-                    },
-                ],
-            ),
-            timeout=AGENT_TIMEOUT,
+        reply = await complete(
+            spec,
+            [
+                {"role": "system", "content": REBUTTAL_SYSTEM},
+                {
+                    "role": "user",
+                    "content": (
+                        f"{user_message}\n\n"
+                        f"YOUR previous answer:\n{original_answer}\n\n"
+                        f"The judge's disagreement report:\n{disagreement_block}"
+                    ),
+                },
+            ],
         )
         result = {
             "index": index,
             "model": spec.label,
             "ok": True,
-            "answer": response.choices[0].message.content or "",
+            "answer": reply.content,
             "latency": round(time.perf_counter() - started, 2),
             "trace": [],
         }
@@ -441,7 +453,8 @@ async def run_consensus(
         # PHASE 3 — LONG-TERM MEMORY WRITE. Always remember (cheap, local);
         # recall is what the toggle gates. This means memory is already
         # populated the first time you switch the feature on.
-        remember(query, verdict)
+        if options.remember:
+            remember(query, verdict)
 
         await events.put(
             {
