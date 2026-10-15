@@ -12,13 +12,18 @@ cross-cutting concerns live in one place:
     free. Callers that need a specific shape (e.g. the judge's JSON) pass a
     `mock=` function; otherwise a generic mock answers in text, or — when
     tools are offered — calls a couple of them first, like a real agent would.
+  * USAGE TRACKING: inside `with track_usage() as stats:` every call made by
+    that code (including concurrent sub-tasks it spawns) is counted — how the
+    eval harness measures what an orchestration pattern costs.
 """
 
 import asyncio
 import json
 import random
 import uuid
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
+from contextvars import ContextVar
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -79,7 +84,11 @@ async def complete(
     """One model call. Raises on provider errors / timeout — callers decide
     whether a failure is fatal (judge) or contained (one research agent)."""
     if MOCK_MODELS:
-        return await _mock_complete(spec, messages, tools, mock)
+        reply = await _mock_complete(spec, messages, tools, mock)
+        # No real usage in mock mode: estimate ~4 chars per token.
+        chars = sum(len(str(m.get("content", ""))) for m in messages) + len(reply.content)
+        _record_usage(chars // 4)
+        return reply
 
     call = litellm.acompletion(
         model=spec.name,
@@ -90,6 +99,8 @@ async def complete(
         tools=tools,
     )
     response = await (asyncio.wait_for(call, timeout=timeout) if timeout else call)
+    usage = getattr(response, "usage", None)
+    _record_usage(getattr(usage, "total_tokens", 0) or 0)
     msg = response.choices[0].message
     return LLMReply(
         content=msg.content or "",
@@ -103,6 +114,31 @@ async def complete(
             for tc in (getattr(msg, "tool_calls", None) or [])
         ],
     )
+
+
+# ── Usage tracking ───────────────────────────────────────────────────────────
+
+# A ContextVar is inherited by asyncio tasks created inside the `with` block
+# (asyncio.gather included), and they all share the same stats dict, so
+# fan-outs and specialists are counted toward the run that spawned them.
+_usage: ContextVar[dict[str, int] | None] = ContextVar("llm_usage", default=None)
+
+
+@contextmanager
+def track_usage() -> Iterator[dict[str, int]]:
+    stats = {"calls": 0, "tokens": 0}
+    token = _usage.set(stats)
+    try:
+        yield stats
+    finally:
+        _usage.reset(token)
+
+
+def _record_usage(tokens: int) -> None:
+    stats = _usage.get()
+    if stats is not None:
+        stats["calls"] += 1
+        stats["tokens"] += tokens
 
 
 # ── Mock mode ────────────────────────────────────────────────────────────────

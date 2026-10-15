@@ -47,6 +47,9 @@ class RunOptions:
     use_tools: bool = False
     rebuttal: bool = False
     use_memory: bool = False
+    # Write the verdict to long-term memory (off for headless/eval runs so
+    # benchmark questions don't pollute what real sessions recall).
+    remember: bool = True
     # Prior turns of this session: [{"query": ..., "merged_answer": ...}].
     # Session memory — distinct from long-term memory (past sessions).
     history: list[dict[str, str]] = field(default_factory=list)
@@ -450,7 +453,8 @@ async def run_consensus(
         # PHASE 3 — LONG-TERM MEMORY WRITE. Always remember (cheap, local);
         # recall is what the toggle gates. This means memory is already
         # populated the first time you switch the feature on.
-        remember(query, verdict)
+        if options.remember:
+            remember(query, verdict)
 
         await events.put(
             {

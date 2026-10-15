@@ -36,11 +36,12 @@ _sessions: dict[str, list[dict[str, str]]] = {}
 
 
 async def run_headless(question: str) -> str:
-    """Exercise.run: the base pipeline (no tools/rebuttal/memory recall) on one
-    question, returning the merged answer."""
+    """Exercise.run: the base pipeline (no tools/rebuttal/memory) on one
+    question, returning the merged answer. Nothing is written to memory."""
     events = await run_to_completion(
         lambda q: run_consensus(
-            question, "", [], load_research_models(), load_judge_model(), q, RunOptions()
+            question, "", [], load_research_models(), load_judge_model(), q,
+            RunOptions(remember=False),
         )
     )
     last = events[-1]

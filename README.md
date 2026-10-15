@@ -124,5 +124,7 @@ and the judge), and run. You'll see:
 | `MAX_TOOL_ITERATIONS` | Max reason→act→observe cycles per agent with tool use on (default 6) |
 | `SUPERVISOR_MODEL` | Supervisor exercise: the model that delegates (default: `JUDGE_MODEL`) |
 | `MAX_SUPERVISOR_TURNS` | Supervisor exercise: max decisions per run; the last must finish (default 8) |
+| `GRADER_MODEL` | Eval exercise: the LLM grader (default: `JUDGE_MODEL`) |
+| `EVAL_CONCURRENCY` | Eval exercise: (target, question) pairs run at once (default 2) |
 | `MOCK_MODELS` | `true` = canned replies + fake tools, no keys or network (default false) |
 | Provider keys | `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GEMINI_API_KEY`, … as your models require |

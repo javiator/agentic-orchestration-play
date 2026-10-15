@@ -17,10 +17,13 @@ set a unique `slug` in its `__init__.py`, restart. Folders starting with `_`
 are skipped. Exercise pages use relative URLs (`api/...`, `static/...`) so the
 slug lives only in `EXERCISE`.
 
-Exercises: `consensus` (static fan-out + judge) and `supervisor` (a
+Exercises: `consensus` (static fan-out + judge), `supervisor` (a
 supervisor LLM delegates to researcher/analyst/writer specialists via a
 `delegate` tool, shared scratchpad, turn cap + repeat guard — see the
-diagram in `app/exercises/supervisor/orchestrator.py`).
+diagram in `app/exercises/supervisor/orchestrator.py`), and `eval` (runs
+single-model baselines + every exercise with `Exercise.run` over a JSON
+question set in `app/exercises/eval/datasets/`; scores exact match + LLM
+grader 1–5, latency, calls/tokens; results in `eval.db`, gitignored).
 
 Shared plumbing every exercise should use:
 - `app/core/llm.py` — `complete()` is the ONLY place that calls LiteLLM.
@@ -29,8 +32,12 @@ Shared plumbing every exercise should use:
   mock mode (the judge's JSON, the supervisor's scripted plan).
 - `app/core/jobs.py` — `JobRegistry.start(pipeline)` / `.stream(job_id)` for
   background runs relayed as SSE; `run_to_completion()` for headless runs.
+- `track_usage()` in `llm.py` — counts calls/tokens of everything run inside
+  it (ContextVar, so gathered sub-tasks count too); the eval uses it.
 - `Exercise.run` (optional) — `async (question) -> answer` without a UI; the
-  hook a future eval harness uses to run any exercise.
+  eval harness lists every exercise that sets it as a target. Headless runs
+  must not write to user-facing stores (consensus passes
+  `RunOptions(remember=False)`).
 - `/static/util.js` — `$`, `esc`, `mdLite`, `show`, `hide` for exercise pages.
 - **Mock mode** (`MOCK_MODELS=true`, works without `.env`): canned replies +
   fake tool results. Use it to verify UI/flow changes with no keys; it does
@@ -79,7 +86,8 @@ curl -s -N "localhost:8000/consensus/api/stream/<job_id>?session_id=<sid>&query=
    - Stage 4 (optional) rebuttal: only when round-1 disagreements exist.
      Agents that fail their rebuttal keep their round-1 answer, so round 2
      never has fewer voices than round 1. Judge runs again with `round=2`.
-   - Memory: `remember()` runs after EVERY verdict (write is always on);
+   - Memory: `remember()` runs after every verdict (unless
+     `RunOptions.remember=False`, used by headless/eval runs);
      `recall()` only when `use_memory` — so the store is already populated
      the first time the user enables the toggle.
    - All progress goes onto an `asyncio.Queue` as event dicts. Event types:
