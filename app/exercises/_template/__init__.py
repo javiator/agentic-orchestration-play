@@ -11,7 +11,13 @@ from pathlib import Path
 
 from app.core.exercise import Exercise
 
-from .routes import router
+from .routes import ask_model, router
+
+
+async def run(question: str) -> str:
+    """Headless entry point (optional): question in, answer out."""
+    return (await ask_model(question))[1]
+
 
 EXERCISE = Exercise(
     slug="template",
@@ -20,4 +26,5 @@ EXERCISE = Exercise(
     router=router,
     static_dir=Path(__file__).parent / "static",
     tags=("starter",),
+    run=run,
 )

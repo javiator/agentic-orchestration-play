@@ -17,6 +17,25 @@ set a unique `slug` in its `__init__.py`, restart. Folders starting with `_`
 are skipped. Exercise pages use relative URLs (`api/...`, `static/...`) so the
 slug lives only in `EXERCISE`.
 
+Exercises: `consensus` (static fan-out + judge) and `supervisor` (a
+supervisor LLM delegates to researcher/analyst/writer specialists via a
+`delegate` tool, shared scratchpad, turn cap + repeat guard — see the
+diagram in `app/exercises/supervisor/orchestrator.py`).
+
+Shared plumbing every exercise should use:
+- `app/core/llm.py` — `complete()` is the ONLY place that calls LiteLLM.
+  Returns `LLMReply` (text + normalized tool calls; `as_message()` appends
+  it to a conversation). Pass `mock=` when a caller needs a specific shape in
+  mock mode (the judge's JSON, the supervisor's scripted plan).
+- `app/core/jobs.py` — `JobRegistry.start(pipeline)` / `.stream(job_id)` for
+  background runs relayed as SSE; `run_to_completion()` for headless runs.
+- `Exercise.run` (optional) — `async (question) -> answer` without a UI; the
+  hook a future eval harness uses to run any exercise.
+- `/static/util.js` — `$`, `esc`, `mdLite`, `show`, `hide` for exercise pages.
+- **Mock mode** (`MOCK_MODELS=true`, works without `.env`): canned replies +
+  fake tool results. Use it to verify UI/flow changes with no keys; it does
+  not replace a real end-to-end run.
+
 ## Run / verify
 
 ```bash
@@ -49,7 +68,7 @@ curl -s -N "localhost:8000/consensus/api/stream/<job_id>?session_id=<sid>&query=
      identical-input property keeps the comparison fair. Don't give agents
      divergent inputs.
    - Stage 1 fan-out: `asyncio.gather` over `_run_research_agent()`.
-   - Stage 2 independence: tools off → one `litellm.acompletion`; tools on →
+   - Stage 2 independence: tools off → one `complete()` call; tools on →
      `run_agent_loop()` (still isolated per agent). ALL exceptions are caught
      inside the agent and returned as `{ok: False, error}` so one provider
      failure never sinks the run.
@@ -130,7 +149,10 @@ curl -s -N "localhost:8000/consensus/api/stream/<job_id>?session_id=<sid>&query=
   pattern scales to APIs, code execution, databases...).
 - Embeddings-based memory: replace `recall()` in
   `app/exercises/consensus/memory.py`.
-- Streaming tokens (not just per-agent completion): switch the agent call to
-  `litellm.acompletion(stream=True)` and emit incremental events.
+- Streaming tokens (not just per-agent completion): add a streaming variant
+  of `complete()` in `app/core/llm.py` and emit incremental events.
+- New specialists: append to `SPECIALISTS` in
+  `app/exercises/supervisor/specialists.py` (the `delegate` tool's enum and
+  the supervisor prompt are generated from it).
 - Persistence: sessions currently die with the process; move `_sessions`
   into SQLite alongside long-term memory for durable multi-turn history.

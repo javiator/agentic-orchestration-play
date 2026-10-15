@@ -96,6 +96,8 @@ cp .env.example .env
 ```
 
 `PORT=9000 ./start.sh` to use another port. Logs go to `server.log`.
+No API keys yet? `MOCK_MODELS=true ./start.sh` runs every exercise with canned
+model replies and fake tool results, so you can explore the flows for free.
 (Manual alternative: `.venv/bin/uvicorn app.main:app --port 8000`.)
 
 Open http://localhost:8000, pick **Multi-Model Research Consensus** (or go
@@ -120,4 +122,7 @@ and the judge), and run. You'll see:
 | `AGENT_TIMEOUT` | Per-agent timeout in seconds (default 120; applies per model call inside the tool loop) |
 | `MAX_TOKENS` | Cap for research answers and judge synthesis (default 6000) |
 | `MAX_TOOL_ITERATIONS` | Max reason→act→observe cycles per agent with tool use on (default 6) |
+| `SUPERVISOR_MODEL` | Supervisor exercise: the model that delegates (default: `JUDGE_MODEL`) |
+| `MAX_SUPERVISOR_TURNS` | Supervisor exercise: max decisions per run; the last must finish (default 8) |
+| `MOCK_MODELS` | `true` = canned replies + fake tools, no keys or network (default false) |
 | Provider keys | `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GEMINI_API_KEY`, … as your models require |

@@ -1,18 +1,24 @@
 """Routes for the template exercise. Paths are relative to the exercise root:
 "/" is its page, "/api/ask" is served at /<slug>/api/ask."""
 
-import asyncio
 from pathlib import Path
 
-import litellm
 from fastapi import APIRouter, Form, HTTPException
 from fastapi.responses import FileResponse
 
-from app.core.config import AGENT_TIMEOUT, MAX_TOKENS, load_research_models
+from app.core.config import load_research_models
+from app.core.llm import complete
 
 router = APIRouter()
 
 STATIC_DIR = Path(__file__).parent / "static"
+
+
+async def ask_model(prompt: str) -> tuple[str, str]:
+    """One model call via the shared wrapper (mock mode works for free)."""
+    spec = load_research_models()[0]
+    reply = await complete(spec, [{"role": "user", "content": prompt}])
+    return spec.label, reply.content
 
 
 @router.get("/")
@@ -24,18 +30,8 @@ async def index() -> FileResponse:
 async def ask(prompt: str = Form(...)) -> dict:
     if not prompt.strip():
         raise HTTPException(400, "Prompt must not be empty")
-    spec = load_research_models()[0]
     try:
-        response = await asyncio.wait_for(
-            litellm.acompletion(
-                model=spec.name,
-                api_base=spec.api_base,
-                api_key=spec.api_key,
-                max_tokens=MAX_TOKENS,
-                messages=[{"role": "user", "content": prompt}],
-            ),
-            timeout=AGENT_TIMEOUT,
-        )
+        model, answer = await ask_model(prompt)
     except Exception as exc:
-        raise HTTPException(502, f"{spec.label} failed: {exc}")
-    return {"model": spec.label, "answer": response.choices[0].message.content or ""}
+        raise HTTPException(502, f"Model call failed: {exc}")
+    return {"model": model, "answer": answer}

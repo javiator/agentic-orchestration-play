@@ -23,12 +23,6 @@
 }
 .agent.failed { border-color: var(--fail); }
 .agent.failed .body { color: var(--fail); }
-.status-dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
-.status-dot.running { background: var(--accent); animation: pulse 1s infinite alternate; }
-.status-dot.ok { background: var(--ok); }
-.status-dot.fail { background: var(--fail); }
-@keyframes pulse { from { opacity: .35; } to { opacity: 1; } }
-.spinner-note { color: var(--muted); font-style: italic; font-size: 13px; }
 
 .timing-badge {
   font-size: 12px; font-weight: 500; color: var(--muted);
@@ -69,13 +63,6 @@ details.turn .markdown { font-size: 13.5px; margin: 6px 0 0 12px; }
 .card.memory { background: #f5f3ff; border-color: #8b5cf6; }
 .card.memory h2 { color: #5b21b6; }
 .memory-item { margin-bottom: 10px; font-size: 13.5px; }
-
-.trace {
-  border: 1px dashed var(--line); border-radius: 6px; background: var(--bg);
-  padding: 6px 10px; margin-bottom: 8px; max-height: 120px; overflow-y: auto;
-}
-.trace-entry { font-size: 12px; color: var(--muted); padding: 1px 0; }
-.trace-entry code { color: var(--accent); }
 
 .card.rebuttal { background: #ecfeff; border-color: #06b6d4; }
 .card.rebuttal h2 { color: #155e75; }

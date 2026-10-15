@@ -5,8 +5,7 @@
 //
 // API URLs are relative ("api/...") so they resolve under this exercise's
 // mount point (/consensus/), wherever the root app puts it.
-
-const $ = (id) => document.getElementById(id);
+// $, esc, mdLite, show, hide come from /static/util.js.
 
 let selectedFiles = [];
 let sessionId = "";       // set after the first run; sent back for follow-ups
@@ -289,18 +288,3 @@ function showError(message) {
   $("error-card").textContent = message;
   show("error-card");
 }
-
-// Minimal markdown: escape HTML, then render **bold** and headings only —
-// enough for judge output without pulling in a renderer dependency.
-function mdLite(text) {
-  return esc(text)
-    .replace(/^#{1,4}\s+(.+)$/gm, "<strong>$1</strong>")
-    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
-}
-function esc(s) {
-  return String(s).replace(/[&<>"']/g, (c) =>
-    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])
-  );
-}
-function show(id) { $(id).classList.remove("hidden"); }
-function hide(id) { $(id).classList.add("hidden"); }

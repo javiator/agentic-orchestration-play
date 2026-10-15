@@ -13,8 +13,9 @@ if [ -f "$PID_FILE" ] && kill -0 "$(cat "$PID_FILE")" 2>/dev/null; then
   exit 0
 fi
 
-if [ ! -f .env ]; then
-  echo "No .env found. Copy .env.example to .env and set your models + API keys first."
+if [ ! -f .env ] && [ "${MOCK_MODELS:-}" != "true" ]; then
+  echo "No .env found. Copy .env.example to .env and set your models + API keys first,"
+  echo "or try the UIs without keys: MOCK_MODELS=true ./start.sh"
   exit 1
 fi
 

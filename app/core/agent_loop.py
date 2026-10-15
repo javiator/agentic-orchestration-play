@@ -18,16 +18,16 @@ enough to answer. The conversation `messages` list IS the agent's working
 memory — every tool result it has seen stays in context for later turns.
 
 Frameworks like LangChain wrap exactly this loop; here it's ~60 lines you can
-read top to bottom.
+read top to bottom. (Model calls go through llm.complete(), which normalizes
+provider replies and handles mock mode.)
 """
 
 import asyncio
 import time
 from typing import Any
 
-import litellm
-
-from .config import AGENT_TIMEOUT, MAX_TOKENS, MAX_TOOL_ITERATIONS, ModelSpec
+from .config import MAX_TOOL_ITERATIONS, ModelSpec
+from .llm import complete
 from .tools import execute_tool, tool_schemas
 
 
@@ -53,26 +53,15 @@ async def run_agent_loop(
         # Force a final answer on the last allowed iteration by withholding
         # tools — otherwise a tool-happy model could loop forever.
         last_chance = iteration == MAX_TOOL_ITERATIONS - 1
-        response = await asyncio.wait_for(
-            litellm.acompletion(
-                model=spec.name,
-                api_base=spec.api_base,
-                api_key=spec.api_key,
-                max_tokens=MAX_TOKENS,
-                messages=conversation,
-                tools=None if last_chance else schemas,
-            ),
-            timeout=AGENT_TIMEOUT,
-        )
-        msg = response.choices[0].message
+        reply = await complete(spec, conversation, tools=None if last_chance else schemas)
 
-        if not getattr(msg, "tool_calls", None):
+        if not reply.tool_calls:
             # No tool requests → this is the final answer; the loop is done.
             return {
                 "index": index,
                 "model": spec.label,
                 "ok": True,
-                "answer": msg.content or "",
+                "answer": reply.content,
                 "latency": round(time.perf_counter() - started, 2),
                 "trace": trace,
             }
@@ -80,19 +69,13 @@ async def run_agent_loop(
         # The model acted. Record its request in the conversation exactly as
         # made (role=assistant with tool_calls), execute each call, and append
         # each result as a role=tool message keyed by tool_call_id.
-        conversation.append(
-            {
-                "role": "assistant",
-                "content": msg.content or "",
-                "tool_calls": [tc.model_dump() for tc in msg.tool_calls],
-            }
-        )
-        for tc in msg.tool_calls:
-            result = await execute_tool(tc.function.name, tc.function.arguments, files)
+        conversation.append(reply.as_message())
+        for tc in reply.tool_calls:
+            result = await execute_tool(tc.name, tc.arguments, files)
             trace.append(
                 {
-                    "tool": tc.function.name,
-                    "args": tc.function.arguments,
+                    "tool": tc.name,
+                    "args": tc.arguments,
                     "result_preview": result[:300],
                 }
             )
@@ -103,8 +86,8 @@ async def run_agent_loop(
                     "phase": phase,
                     "index": index,
                     "model": spec.label,
-                    "tool": tc.function.name,
-                    "args": tc.function.arguments[:200],
+                    "tool": tc.name,
+                    "args": tc.arguments[:200],
                 }
             )
             conversation.append(

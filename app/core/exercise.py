@@ -7,6 +7,7 @@ every exercise package automatically and mounts it at /<slug>/, so adding
 an exercise never requires touching the root app or start.sh.
 """
 
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -24,3 +25,6 @@ class Exercise:
     static_dir: Path | None = None  # served at /<slug>/static/ when set
     tags: tuple[str, ...] = ()      # concepts covered, shown as chips
     order: int = 100       # landing-page position (lower first, then title)
+    # Optional headless entry point: question in, final answer text out, no
+    # UI. Lets other code (e.g. an eval harness) run any exercise uniformly.
+    run: Callable[[str], Awaitable[str]] | None = None

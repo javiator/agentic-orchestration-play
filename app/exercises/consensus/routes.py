@@ -14,7 +14,6 @@ level multi-turn layer; the tool loop inside each agent is the inner one.
 """
 
 import asyncio
-import json
 import uuid
 from pathlib import Path
 
@@ -23,16 +22,31 @@ from fastapi.responses import FileResponse, StreamingResponse
 
 from app.core.config import load_judge_model, load_research_models
 from app.core.files import parse_upload
+from app.core.jobs import JobRegistry, run_to_completion
 
 from .orchestrator import RunOptions, run_consensus
 
 router = APIRouter()
 
 # In-memory stores — fine for a single-user tool:
-#   _jobs:     job_id -> live event queue for the SSE relay
+#   _jobs:     job_id -> live event queue for the SSE relay (app/core/jobs.py)
 #   _sessions: session_id -> [{"query", "merged_answer"}, ...] (session memory)
-_jobs: dict[str, asyncio.Queue] = {}
+_jobs = JobRegistry()
 _sessions: dict[str, list[dict[str, str]]] = {}
+
+
+async def run_headless(question: str) -> str:
+    """Exercise.run: the base pipeline (no tools/rebuttal/memory recall) on one
+    question, returning the merged answer."""
+    events = await run_to_completion(
+        lambda q: run_consensus(
+            question, "", [], load_research_models(), load_judge_model(), q, RunOptions()
+        )
+    )
+    last = events[-1]
+    if last["type"] != "done":
+        raise RuntimeError(last.get("message", "consensus run failed"))
+    return last["verdict"].get("merged_answer", "")
 
 STATIC_DIR = Path(__file__).parent / "static"
 
@@ -90,18 +104,13 @@ async def submit_query(
         use_tools=use_tools, rebuttal=rebuttal, use_memory=use_memory, history=history
     )
 
-    job_id = uuid.uuid4().hex
-    events: asyncio.Queue = asyncio.Queue()
-    _jobs[job_id] = events
-
-    async def pipeline() -> None:
+    async def pipeline(events: asyncio.Queue) -> None:
         await run_consensus(query, context_text, parsed_files, research, judge, events, options)
 
     # Fire the pipeline in the background; the SSE endpoint drains the queue.
     # Session history is appended by the stream relay when it sees 'done', so
     # a follow-up asked after the answer renders always has this turn.
-    task = asyncio.create_task(pipeline())
-    task.add_done_callback(lambda t: t.exception())  # surface, don't swallow
+    job_id = _jobs.start(pipeline)
 
     return {
         "job_id": job_id,
@@ -116,27 +125,12 @@ async def submit_query(
 
 @router.get("/api/stream/{job_id}")
 async def stream(job_id: str, session_id: str = "", query: str = "") -> StreamingResponse:
-    events = _jobs.get(job_id)
-    if events is None:
-        raise HTTPException(404, "Unknown job")
+    def record_turn(event: dict) -> None:
+        # Record the finished turn into session memory so the next query in
+        # this session can reference it.
+        if event["type"] == "done" and session_id in _sessions and query:
+            _sessions[session_id].append(
+                {"query": query, "merged_answer": event["verdict"].get("merged_answer", "")}
+            )
 
-    async def event_source():
-        try:
-            while True:
-                event = await events.get()
-                # Record the finished turn into session memory so the next
-                # query in this session can reference it.
-                if event["type"] == "done" and session_id in _sessions and query:
-                    _sessions[session_id].append(
-                        {
-                            "query": query,
-                            "merged_answer": event["verdict"].get("merged_answer", ""),
-                        }
-                    )
-                yield f"data: {json.dumps(event)}\n\n"
-                if event["type"] in ("done", "error"):
-                    break
-        finally:
-            _jobs.pop(job_id, None)
-
-    return StreamingResponse(event_source(), media_type="text/event-stream")
+    return _jobs.stream(job_id, on_event=record_turn)

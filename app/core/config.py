@@ -30,7 +30,19 @@ class ModelSpec:
         return self.name.split("/", 1)[-1]
 
 
-def _spec(prefix: str) -> ModelSpec | None:
+def _env_flag(name: str) -> bool:
+    return os.getenv(name, "").strip().lower() in ("1", "true", "yes", "on")
+
+
+# MOCK MODE: every model call returns a canned reply and tools return fake
+# results (see llm.py) — explore the UIs and orchestration flow with no API
+# keys, network or cost. Model names still come from .env when set.
+MOCK_MODELS = _env_flag("MOCK_MODELS")
+
+
+def load_model(prefix: str) -> ModelSpec | None:
+    """Read one model from `<prefix>`, `<prefix>_API_BASE`, `<prefix>_API_KEY`.
+    Exercises use this for their own roles (e.g. SUPERVISOR_MODEL)."""
     name = os.getenv(prefix)
     if not name:
         return None
@@ -47,18 +59,22 @@ def load_research_models() -> list[ModelSpec]:
     models: list[ModelSpec] = []
     i = 1
     while True:
-        spec = _spec(f"MODEL_{i}")
+        spec = load_model(f"MODEL_{i}")
         if spec is None:
             break
         models.append(spec)
         i += 1
+    if not models and MOCK_MODELS:
+        return [ModelSpec(f"mock/model-{c}") for c in "abc"]
     if not models:
         raise RuntimeError("No models configured. Set MODEL_1 (and MODEL_2, ...) in .env")
     return models
 
 
 def load_judge_model() -> ModelSpec:
-    spec = _spec("JUDGE_MODEL")
+    spec = load_model("JUDGE_MODEL")
+    if spec is None and MOCK_MODELS:
+        return ModelSpec("mock/judge")
     if spec is None:
         raise RuntimeError("JUDGE_MODEL not set in .env")
     return spec

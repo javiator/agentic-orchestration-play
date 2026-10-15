@@ -9,7 +9,7 @@ from pathlib import Path
 
 from app.core.exercise import Exercise
 
-from .routes import router
+from .routes import router, run_headless
 
 EXERCISE = Exercise(
     slug="consensus",
@@ -22,4 +22,5 @@ EXERCISE = Exercise(
     static_dir=Path(__file__).parent / "static",
     tags=("fan-out", "LLM judge", "ReAct tools", "rebuttal", "memory"),
     order=10,
+    run=run_headless,
 )
