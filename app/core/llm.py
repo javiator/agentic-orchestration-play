@@ -116,18 +116,37 @@ async def complete(
     )
 
 
+async def embed(spec: ModelSpec, texts: list[str], *, timeout: float | None = AGENT_TIMEOUT) -> list[list[float]]:
+    """Embedding vectors for `texts` (one per text), via LiteLLM like
+    `complete()` — any provider's embedding model, chosen in .env. Not
+    available in mock mode: callers fall back to keyword search."""
+    if MOCK_MODELS:
+        raise RuntimeError("embeddings are not mocked")
+    call = litellm.aembedding(
+        model=spec.name, input=texts, api_base=spec.api_base, api_key=spec.api_key
+    )
+    response = await (asyncio.wait_for(call, timeout=timeout) if timeout else call)
+    usage = getattr(response, "usage", None)
+    _record_usage(getattr(usage, "total_tokens", 0) or 0)
+    return [
+        item["embedding"] if isinstance(item, dict) else item.embedding for item in response.data
+    ]
+
+
 # ── Usage tracking ───────────────────────────────────────────────────────────
 
 # A ContextVar is inherited by asyncio tasks created inside the `with` block
 # (asyncio.gather included), and they all share the same stats dict, so
 # fan-outs and specialists are counted toward the run that spawned them.
-_usage: ContextVar[dict[str, int] | None] = ContextVar("llm_usage", default=None)
+# Trackers nest: a call counts toward every enclosing `with` block, so an
+# exercise can meter its own parts while the eval meters the whole run.
+_usage: ContextVar[tuple[dict[str, int], ...]] = ContextVar("llm_usage", default=())
 
 
 @contextmanager
 def track_usage() -> Iterator[dict[str, int]]:
     stats = {"calls": 0, "tokens": 0}
-    token = _usage.set(stats)
+    token = _usage.set((*_usage.get(), stats))
     try:
         yield stats
     finally:
@@ -135,8 +154,7 @@ def track_usage() -> Iterator[dict[str, int]]:
 
 
 def _record_usage(tokens: int) -> None:
-    stats = _usage.get()
-    if stats is not None:
+    for stats in _usage.get():
         stats["calls"] += 1
         stats["tokens"] += tokens
 

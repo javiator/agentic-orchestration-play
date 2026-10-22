@@ -28,3 +28,7 @@ class Exercise:
     # Optional headless entry point: question in, final answer text out, no
     # UI. Lets other code (e.g. an eval harness) run any exercise uniformly.
     run: Callable[[str], Awaitable[str]] | None = None
+    # More headless entry points, as (name, run) pairs, for exercises that
+    # compare variants of one pattern (e.g. plain vs agentic RAG). Each is
+    # listed as its own eval target, labelled "<title> (<name>)".
+    variants: tuple[tuple[str, Callable[[str], Awaitable[str]]], ...] = ()

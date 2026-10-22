@@ -108,6 +108,11 @@ def list_targets() -> list[Target]:
         for ex in discover_exercises()
         if ex.run is not None
     ]
+    targets += [
+        Target(f"exercise:{ex.slug}:{name}", f"{ex.title} ({name})", run)
+        for ex in discover_exercises()
+        for name, run in ex.variants
+    ]
     return targets
 
 

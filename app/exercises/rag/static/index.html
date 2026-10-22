@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Plain RAG vs Agentic RAG</title>
+<link rel="stylesheet" href="/static/base.css">
+<link rel="stylesheet" href="static/style.css">
+</head>
+<body>
+<header>
+  <h1>Plain RAG vs Agentic RAG</h1>
+  <p class="sub">Same question, model, documents and search &mdash; a fixed retrieve-then-answer pipeline vs an agent that decides what to search</p>
+</header>
+
+<main>
+  <!-- ── Setup (from api/info) ──────────────────────────────── -->
+  <section class="card">
+    <h2>Setup <span id="mock-badge" class="mock-badge hidden">mock mode</span></h2>
+    <div class="setup" id="setup"></div>
+    <details class="docs">
+      <summary id="docs-summary">Documents</summary>
+      <p class="muted small">A fictional company handbook. Click a document to read it &mdash; that's all either strategy can know.</p>
+      <div id="doc-list" class="doc-list"></div>
+    </details>
+  </section>
+
+  <!-- ── Question ──────────────────────────────────────────── -->
+  <section class="card">
+    <label for="question">Question about Tidewell Labs</label>
+    <textarea id="question" rows="2" placeholder="e.g. Who has to approve a $12,000 expense? Name the person."></textarea>
+    <div class="samples" id="samples"></div>
+    <div class="actions">
+      <button id="run">Run both</button>
+      <span class="muted small">Try a one-fact question, then a multi-hop one, then one the documents can't answer.</span>
+    </div>
+  </section>
+
+  <!-- ── Side by side ──────────────────────────────────────── -->
+  <section class="variants hidden" id="variants">
+    <div class="card variant" id="v-plain">
+      <h2><span class="status-dot"></span>Plain RAG <span class="stats"></span></h2>
+      <p class="how muted">One search with your exact words &rarr; top passages &rarr; answer.</p>
+      <div class="steps"></div>
+      <div class="answer markdown"></div>
+    </div>
+    <div class="card variant" id="v-agentic">
+      <h2><span class="status-dot"></span>Agentic RAG <span class="stats"></span></h2>
+      <p class="how muted">Search is a tool: the agent picks queries, follows leads, reads documents, then a grounding check.</p>
+      <div class="steps"></div>
+      <div class="answer markdown"></div>
+    </div>
+  </section>
+
+  <section class="card compare hidden" id="compare"></section>
+
+  <section class="card hidden" id="doc-view">
+    <h2><span id="doc-title"></span> <button class="link-btn" id="doc-close">close</button></h2>
+    <pre id="doc-text" class="doc-text"></pre>
+  </section>
+
+  <section class="card error hidden" id="error-card"></section>
+</main>
+
+<script src="/static/nav.js"></script>
+<script src="/static/util.js"></script>
+<script src="static/app.js"></script>
+</body>
+</html>
