@@ -1,0 +1,60 @@
+{
+  "name": "Code: exact computation (10 questions)",
+  "description": "Questions with exact answers that need computation or the code agent's data file (sales.csv). Compare single models (no code, no file access) with the Code-Executing Agent: guessing vs computing.",
+  "questions": [
+    {
+      "id": "primes",
+      "question": "How many prime numbers are there below 100,000?",
+      "expected": "9592"
+    },
+    {
+      "id": "digit-sum",
+      "question": "What is the sum of the decimal digits of 2 to the power 1000?",
+      "expected": "1366"
+    },
+    {
+      "id": "fib-40",
+      "question": "What is the 40th Fibonacci number, with F1 = F2 = 1?",
+      "expected": "102334155"
+    },
+    {
+      "id": "days-between",
+      "question": "How many days are there between 3 February 2024 and 17 November 2025 (not counting the end date)?",
+      "expected": "653"
+    },
+    {
+      "id": "compound",
+      "question": "$10,000 is invested at 4.5% annual interest compounded monthly. What is it worth after 7 years, to the cent?",
+      "expected": "13694.52",
+      "rubric": "10000 × (1 + 0.045/12)^84 = $13,694.52."
+    },
+    {
+      "id": "revenue-2025",
+      "question": "Using sales.csv (columns month, region, product, units, unit_price), what was the total revenue (units × unit_price) in 2025?",
+      "expected": "408255"
+    },
+    {
+      "id": "growth-region",
+      "question": "Using sales.csv, which region had the highest revenue growth from 2024 to 2025, and by what percentage?",
+      "expected": "South",
+      "rubric": "South, about +34.4% (2024 → 2025 revenue). Region and percentage both needed for 5."
+    },
+    {
+      "id": "top-month",
+      "question": "Using sales.csv, which month had the most units sold across all regions and products, and how many?",
+      "expected": ["2025-12", "December 2025"],
+      "rubric": "2025-12 (December 2025) with 1081 units."
+    },
+    {
+      "id": "west-share",
+      "question": "Using sales.csv, which product had the largest share of the West region's 2025 revenue, and what share?",
+      "expected": "Pro",
+      "rubric": "Pro, about 40.5% of West 2025 revenue (Enterprise ~29.8%, Basic ~29.7%)."
+    },
+    {
+      "id": "east-pro-2024",
+      "question": "Using sales.csv, how many units of Pro did the East region sell in 2024?",
+      "expected": "836"
+    }
+  ]
+}

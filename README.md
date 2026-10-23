@@ -63,6 +63,7 @@ a checkbox in the UI so you can study one at a time; all can coexist.
 | `consensus` — Multi-Model Research Consensus | Static fan-out + judge (above) | Parallelism, synthesis, tool use, rebuttal, memory |
 | `supervisor` — Supervisor & Specialists | A supervisor LLM delegates to researcher/analyst/writer via a `delegate` tool | Dynamic routing, agents as tools, shared state, loop guards |
 | `rag` — Plain RAG vs Agentic RAG | One question through a fixed retrieve-then-answer pipeline and an agent that uses search as a tool, side by side | Multi-hop retrieval, query rewriting, grounding checks, the cost of agency |
+| `code-agent` — Code-Executing Agent | ReAct loop whose only tool runs Python in a limited subprocess | Exact answers by computation, self-correction from tracebacks, sandboxing |
 | `eval` — Eval Harness | Runs single models + every exercise over a question set; exact match + LLM grader, latency, cost | Measuring orchestration instead of eyeballing it |
 
 ### Plain RAG vs Agentic RAG (`/rag/`)
@@ -84,6 +85,24 @@ policy names a *role*, the org chart names the *person* — plain RAG usually
 retrieves only one side) and unanswerable ones. After each run the page shows
 the "cost of agency" (calls, tokens, time ratios). For numbers over many
 questions, run the Eval Harness on the `rag` question set with both RAG targets.
+
+### Code-Executing Agent (`/code-agent/`)
+
+The model (`CODE_MODEL`, default `MODEL_1`) gets one tool, `run_python`. Each
+call runs a complete script in a fresh process inside a temp directory holding
+`data/sales.csv`; the model sees the exit code, stdout and stderr, and fixes its
+code when a run fails. Guards: step budget (`CODE_MAX_STEPS`), blocked re-runs
+of identical code, and per-run limits (`CODE_TIMEOUT`, `CODE_MEMORY_MB`, file
+size, process count; the whole process group is killed on timeout).
+
+> **Safety:** the code runs on your machine as your user. API keys are kept out
+> of its environment, but it can still read your files and reach the network —
+> it is a playground, not a security sandbox. Use models you trust; for real
+> isolation swap `Workspace.run_python()` in `sandbox.py` for a container or
+> microVM (Docker `--network=none`, gVisor, Firecracker, a hosted sandbox).
+
+Run the Eval Harness on the `code` question set to compare single models
+(guessing) with the agent (computing).
 
 ## Code tour
 
@@ -158,5 +177,7 @@ and the judge), and run. You'll see:
 | `RAG_MODEL` | RAG exercise: model for both variants (default: `MODEL_1`) |
 | `EMBEDDING_MODEL` | RAG exercise: optional LiteLLM embedding model → hybrid search (default: BM25 only) |
 | `RAG_TOP_K` / `RAG_MAX_STEPS` / `RAG_VERIFY_ROUNDS` | RAG exercise: passages per search (4), agent step budget (6), grounding-check retries (1) |
+| `CODE_MODEL` | Code agent: model that writes and runs code (default: `MODEL_1`) |
+| `CODE_MAX_STEPS` / `CODE_TIMEOUT` / `CODE_MEMORY_MB` | Code agent: step budget (8), per-run timeout in seconds (10), memory cap per run (512) |
 | `MOCK_MODELS` | `true` = canned replies + fake tools, no keys or network (default false) |
 | Provider keys | `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GEMINI_API_KEY`, … as your models require |

@@ -23,7 +23,10 @@ supervisor LLM delegates to researcher/analyst/writer specialists via a
 diagram in `app/exercises/supervisor/orchestrator.py`), `rag` (plain RAG vs
 agentic RAG side by side over a fictional handbook in
 `app/exercises/rag/corpus/`; shared BM25/hybrid search in `retrieval.py`,
-both pipelines + grounding check in `pipelines.py`), and `eval` (runs
+both pipelines + grounding check in `pipelines.py`), `code-agent` (ReAct
+loop with one `run_python` tool; `sandbox.py` runs each script in a fresh
+limited subprocess with a stripped env — NOT a security boundary, keep that
+docstring accurate), and `eval` (runs
 single-model baselines + every exercise with `Exercise.run` over a JSON
 question set in `app/exercises/eval/datasets/`; scores exact match + LLM
 grader 1–5, latency, calls/tokens; results in `eval.db`, gitignored).
@@ -174,5 +177,8 @@ curl -s -N "localhost:8000/consensus/api/stream/<job_id>?session_id=<sid>&query=
   (markdown, one `# ` title, `## ` sections = chunks) and the sample/eval
   questions; better retrieval (stemming, rerankers) goes in `retrieval.py`
   and benefits both variants equally.
+- Code agent: real isolation = replace `Workspace.run_python()` in
+  `app/exercises/code_agent/sandbox.py` (container/microVM); add data files
+  to `app/exercises/code_agent/data/` and they're copied into every run.
 - Persistence: sessions currently die with the process; move `_sessions`
   into SQLite alongside long-term memory for durable multi-turn history.
