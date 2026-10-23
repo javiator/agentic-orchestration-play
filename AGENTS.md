@@ -20,7 +20,10 @@ slug lives only in `EXERCISE`.
 Exercises: `consensus` (static fan-out + judge), `supervisor` (a
 supervisor LLM delegates to researcher/analyst/writer specialists via a
 `delegate` tool, shared scratchpad, turn cap + repeat guard — see the
-diagram in `app/exercises/supervisor/orchestrator.py`), and `eval` (runs
+diagram in `app/exercises/supervisor/orchestrator.py`), `rag` (plain RAG vs
+agentic RAG side by side over a fictional handbook in
+`app/exercises/rag/corpus/`; shared BM25/hybrid search in `retrieval.py`,
+both pipelines + grounding check in `pipelines.py`), and `eval` (runs
 single-model baselines + every exercise with `Exercise.run` over a JSON
 question set in `app/exercises/eval/datasets/`; scores exact match + LLM
 grader 1–5, latency, calls/tokens; results in `eval.db`, gitignored).
@@ -33,9 +36,14 @@ Shared plumbing every exercise should use:
 - `app/core/jobs.py` — `JobRegistry.start(pipeline)` / `.stream(job_id)` for
   background runs relayed as SSE; `run_to_completion()` for headless runs.
 - `track_usage()` in `llm.py` — counts calls/tokens of everything run inside
-  it (ContextVar, so gathered sub-tasks count too); the eval uses it.
+  it (ContextVar, so gathered sub-tasks count too); trackers nest, so an
+  exercise can meter its parts while the eval meters the whole run.
+- `embed()` in `llm.py` — embeddings via LiteLLM (not mocked; the rag
+  exercise falls back to BM25 without it).
 - `Exercise.run` (optional) — `async (question) -> answer` without a UI; the
-  eval harness lists every exercise that sets it as a target. Headless runs
+  eval harness lists every exercise that sets it as a target;
+  `Exercise.variants` adds more `(name, run)` targets (rag: plain/agentic).
+  Headless runs
   must not write to user-facing stores (consensus passes
   `RunOptions(remember=False)`).
 - `/static/util.js` — `$`, `esc`, `mdLite`, `show`, `hide` for exercise pages.
@@ -162,5 +170,9 @@ curl -s -N "localhost:8000/consensus/api/stream/<job_id>?session_id=<sid>&query=
 - New specialists: append to `SPECIALISTS` in
   `app/exercises/supervisor/specialists.py` (the `delegate` tool's enum and
   the supervisor prompt are generated from it).
+- RAG: swap in your own documents by replacing `app/exercises/rag/corpus/`
+  (markdown, one `# ` title, `## ` sections = chunks) and the sample/eval
+  questions; better retrieval (stemming, rerankers) goes in `retrieval.py`
+  and benefits both variants equally.
 - Persistence: sessions currently die with the process; move `_sessions`
   into SQLite alongside long-term memory for durable multi-turn history.

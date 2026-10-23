@@ -56,6 +56,35 @@ a checkbox in the UI so you can study one at a time; all can coexist.
   SQLite `memory.db`; with the toggle on, related past findings are recalled
   into new queries and shown in the UI).
 
+## Exercises
+
+| Exercise | Pattern | What it teaches |
+|---|---|---|
+| `consensus` — Multi-Model Research Consensus | Static fan-out + judge (above) | Parallelism, synthesis, tool use, rebuttal, memory |
+| `supervisor` — Supervisor & Specialists | A supervisor LLM delegates to researcher/analyst/writer via a `delegate` tool | Dynamic routing, agents as tools, shared state, loop guards |
+| `rag` — Plain RAG vs Agentic RAG | One question through a fixed retrieve-then-answer pipeline and an agent that uses search as a tool, side by side | Multi-hop retrieval, query rewriting, grounding checks, the cost of agency |
+| `eval` — Eval Harness | Runs single models + every exercise over a question set; exact match + LLM grader, latency, cost | Measuring orchestration instead of eyeballing it |
+
+### Plain RAG vs Agentic RAG (`/rag/`)
+
+Both variants use the same model (`RAG_MODEL`, default `MODEL_1`), the same
+20-document fictional company handbook (`app/exercises/rag/corpus/`) and the
+same search layer (`retrieval.py`: one chunk per `## ` section, BM25, or
+hybrid BM25 + embeddings fused by rank when `EMBEDDING_MODEL` is set).
+
+- **Plain** — one search with the user's exact words → top-k passages → answer with citations.
+- **Agentic** — `search_docs` / `read_doc` tools in a loop: the agent breaks the
+  question into facts, writes its own queries, follows leads across documents,
+  then a **grounding check** asks whether the evidence supports the answer and
+  sends it back to search if not. Guards: step budget (`RAG_MAX_STEPS`),
+  repeated-query block, `RAG_VERIFY_ROUNDS`.
+
+Sample questions cover one-fact lookups (both do fine), multi-hop (e.g. a
+policy names a *role*, the org chart names the *person* — plain RAG usually
+retrieves only one side) and unanswerable ones. After each run the page shows
+the "cost of agency" (calls, tokens, time ratios). For numbers over many
+questions, run the Eval Harness on the `rag` question set with both RAG targets.
+
 ## Code tour
 
 The repo is a playground of exercises: the landing page at `/` lists every
@@ -126,5 +155,8 @@ and the judge), and run. You'll see:
 | `MAX_SUPERVISOR_TURNS` | Supervisor exercise: max decisions per run; the last must finish (default 8) |
 | `GRADER_MODEL` | Eval exercise: the LLM grader (default: `JUDGE_MODEL`) |
 | `EVAL_CONCURRENCY` | Eval exercise: (target, question) pairs run at once (default 2) |
+| `RAG_MODEL` | RAG exercise: model for both variants (default: `MODEL_1`) |
+| `EMBEDDING_MODEL` | RAG exercise: optional LiteLLM embedding model → hybrid search (default: BM25 only) |
+| `RAG_TOP_K` / `RAG_MAX_STEPS` / `RAG_VERIFY_ROUNDS` | RAG exercise: passages per search (4), agent step budget (6), grounding-check retries (1) |
 | `MOCK_MODELS` | `true` = canned replies + fake tools, no keys or network (default false) |
 | Provider keys | `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GEMINI_API_KEY`, … as your models require |
