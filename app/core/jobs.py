@@ -76,3 +76,13 @@ async def run_to_completion(pipeline: Pipeline) -> list[Event]:
     while not events.empty():
         out.append(events.get_nowait())
     return out
+
+
+async def headless_answer(pipeline: Pipeline, pick: Callable[[Event], str]) -> str:
+    """Run a pipeline without a browser and pick the answer out of its 'done'
+    event — the usual body of an exercise's `Exercise.run`."""
+    events = await run_to_completion(pipeline)
+    last = events[-1] if events else {"type": "error", "message": "no events"}
+    if last["type"] != "done":
+        raise RuntimeError(last.get("message", "run failed"))
+    return pick(last)

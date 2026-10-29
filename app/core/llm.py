@@ -20,6 +20,7 @@ cross-cutting concerns live in one place:
 import asyncio
 import json
 import random
+import time
 import uuid
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
@@ -100,7 +101,7 @@ async def complete(
     )
     response = await (asyncio.wait_for(call, timeout=timeout) if timeout else call)
     usage = getattr(response, "usage", None)
-    _record_usage(getattr(usage, "total_tokens", 0) or 0)
+    _record_usage(getattr(usage, "total_tokens", 0) or 0, _cost(response))
     msg = response.choices[0].message
     return LLMReply(
         content=msg.content or "",
@@ -127,7 +128,7 @@ async def embed(spec: ModelSpec, texts: list[str], *, timeout: float | None = AG
     )
     response = await (asyncio.wait_for(call, timeout=timeout) if timeout else call)
     usage = getattr(response, "usage", None)
-    _record_usage(getattr(usage, "total_tokens", 0) or 0)
+    _record_usage(getattr(usage, "total_tokens", 0) or 0, _cost(response))
     return [
         item["embedding"] if isinstance(item, dict) else item.embedding for item in response.data
     ]
@@ -140,12 +141,22 @@ async def embed(spec: ModelSpec, texts: list[str], *, timeout: float | None = AG
 # fan-outs and specialists are counted toward the run that spawned them.
 # Trackers nest: a call counts toward every enclosing `with` block, so an
 # exercise can meter its own parts while the eval meters the whole run.
-_usage: ContextVar[tuple[dict[str, int], ...]] = ContextVar("llm_usage", default=())
+_usage: ContextVar[tuple[dict[str, Any], ...]] = ContextVar("llm_usage", default=())
+
+
+def _cost(response: Any) -> float:
+    """USD cost from LiteLLM's price table; 0.0 for models it doesn't know
+    (local models, custom gateways) — so treat cost as a lower bound."""
+    try:
+        return float(litellm.completion_cost(completion_response=response) or 0.0)
+    except Exception:
+        return 0.0
 
 
 @contextmanager
-def track_usage() -> Iterator[dict[str, int]]:
-    stats = {"calls": 0, "tokens": 0}
+def track_usage() -> Iterator[dict[str, Any]]:
+    """Yields {"calls", "tokens", "cost"} — cost in USD, 0 in mock mode."""
+    stats: dict[str, Any] = {"calls": 0, "tokens": 0, "cost": 0.0}
     token = _usage.set((*_usage.get(), stats))
     try:
         yield stats
@@ -153,10 +164,11 @@ def track_usage() -> Iterator[dict[str, int]]:
         _usage.reset(token)
 
 
-def _record_usage(tokens: int) -> None:
+def _record_usage(tokens: int, cost: float = 0.0) -> None:
     for stats in _usage.get():
         stats["calls"] += 1
         stats["tokens"] += tokens
+        stats["cost"] += cost
 
 
 # ── Mock mode ────────────────────────────────────────────────────────────────
@@ -202,3 +214,13 @@ def _generic_mock(
         }
         return LLMReply("", [mock_tool_call(fn["name"], args)])
     return LLMReply(f"(mock answer from {spec.label}) Responding to: {last_user_text(messages)}")
+
+
+async def metered(awaitable: Any) -> tuple[Any, dict[str, Any]]:
+    """Await something and return (result, {calls, tokens, cost, latency}) —
+    the cost of one strategy, for side-by-side comparisons."""
+    started = time.perf_counter()
+    with track_usage() as usage:
+        result = await awaitable
+    return result, {**usage, "cost": round(usage["cost"], 6),
+                    "latency": round(time.perf_counter() - started, 2)}

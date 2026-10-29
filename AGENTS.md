@@ -110,8 +110,9 @@ curl -s -N "localhost:8000/consensus/api/stream/<job_id>?session_id=<sid>&query=
      ran) `initial_verdict` + `rebuttal_results`.
 3. **`app/core/agent_loop.py`** — the ReAct loop, heavily commented: completion
    with `tools=` → if `tool_calls`, execute + append `role:"tool"` results →
-   repeat. The final allowed iteration passes `tools=None` to force an
-   answer. The `messages` list is the agent's working memory.
+   repeat. The final allowed iteration appends an "answer now" note (tools
+   stay offered — some providers reject tool-less requests once the history
+   holds tool calls); a tool call made anyway ends the loop as a failure. The `messages` list is the agent's working memory.
 4. **`app/core/tools.py`** — OpenAI-style schemas + async executors
    (`search_web`/ddgs, `fetch_url`/httpx, `search_documents`/keyword chunks).
    Executors never raise — errors return as text the model can react to.

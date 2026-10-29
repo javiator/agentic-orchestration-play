@@ -30,6 +30,11 @@ from .config import MAX_TOOL_ITERATIONS, ModelSpec
 from .llm import complete
 from .tools import execute_tool, tool_schemas
 
+LAST_CHANCE_NOTE = (
+    "Tool budget used up. Answer now from what you have gathered, without "
+    "calling any more tools."
+)
+
 
 async def run_agent_loop(
     spec: ModelSpec,
@@ -50,10 +55,18 @@ async def run_agent_loop(
     schemas = tool_schemas(has_documents=bool(files))
 
     for iteration in range(MAX_TOOL_ITERATIONS):
-        # Force a final answer on the last allowed iteration by withholding
-        # tools — otherwise a tool-happy model could loop forever.
+        # Force a final answer on the last allowed iteration — otherwise a
+        # tool-happy model could loop forever. Tools stay offered (some
+        # providers reject a tool-less request once the history holds tool
+        # calls); an explicit instruction asks for the answer instead, and a
+        # tool call made anyway ends the loop below.
         last_chance = iteration == MAX_TOOL_ITERATIONS - 1
-        reply = await complete(spec, conversation, tools=None if last_chance else schemas)
+        if last_chance:
+            conversation.append({"role": "user", "content": LAST_CHANCE_NOTE})
+        reply = await complete(spec, conversation, tools=schemas)
+
+        if reply.tool_calls and last_chance:
+            break
 
         if not reply.tool_calls:
             # No tool requests → this is the final answer; the loop is done.
@@ -94,8 +107,8 @@ async def run_agent_loop(
                 {"role": "tool", "tool_call_id": tc.id, "content": result}
             )
 
-    # Unreachable in practice (last iteration has no tools, so the model must
-    # answer), but never leave the caller without a result.
+    # The model kept calling tools on its last chance: never leave the caller
+    # without a result.
     return {
         "index": index,
         "model": spec.label,
