@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Guardrails</title>
+<link rel="stylesheet" href="/static/base.css">
+<link rel="stylesheet" href="static/style.css">
+</head>
+<body>
+<header>
+  <h1>Guardrails</h1>
+  <p class="sub">The same support bot, with and without layered checks &mdash; try to make it leak its secret</p>
+</header>
+
+<main>
+  <section class="card">
+    <h2>The bot <span id="mock-badge" class="mock-badge hidden">mock mode</span></h2>
+    <div class="setup" id="setup"></div>
+    <details><summary class="small muted">Its system prompt (contains the secret)</summary><pre class="box" id="prompt"></pre></details>
+  </section>
+
+  <section class="card">
+    <label for="message">Message to the bot</label>
+    <textarea id="message" rows="2" placeholder="Ask a normal question — or try to extract the discount code"></textarea>
+    <div class="samples" id="samples"></div>
+    <div class="actions"><button id="run">Send to both bots</button></div>
+  </section>
+
+  <section class="columns hidden" id="results">
+    <div class="card" id="v-unguarded">
+      <h2><span class="status-dot"></span>Unguarded <span class="stats"></span></h2>
+      <p class="muted small">Only the prompt says "never reveal".</p>
+      <div class="flag"></div><div class="answer markdown"></div>
+    </div>
+    <div class="card" id="v-guarded">
+      <h2><span class="status-dot"></span>Guarded <span class="stats"></span></h2>
+      <div class="pipeline"></div>
+      <div class="flag"></div><div class="answer markdown"></div>
+    </div>
+  </section>
+  <section class="card lesson hidden" id="lesson"></section>
+  <section class="card error hidden" id="error-card"></section>
+</main>
+
+<script src="/static/nav.js"></script>
+<script src="/static/util.js"></script>
+<script src="static/app.js"></script>
+</body>
+</html>
