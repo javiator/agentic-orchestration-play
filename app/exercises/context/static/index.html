@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Context Management</title>
+<link rel="stylesheet" href="/static/base.css">
+<link rel="stylesheet" href="static/style.css">
+</head>
+<body>
+<header>
+  <h1>Context Management</h1>
+  <p class="sub">A model only remembers what you send it. Four ways to fit a growing conversation &mdash; and what each one forgets</p>
+</header>
+
+<main>
+  <section class="card">
+    <h2>The conversation <span id="mock-badge" class="mock-badge hidden">mock mode</span></h2>
+    <p class="small" id="script-info"></p>
+    <details><summary class="small muted">Read the script (facts the quiz asks about are highlighted)</summary>
+      <div class="script" id="script"></div></details>
+    <div class="setup" id="setup"></div>
+    <div class="actions"><button id="run">Replay with all 4 strategies &amp; quiz them</button></div>
+  </section>
+
+  <section class="card hidden" id="results">
+    <h2>Quiz: what does each strategy remember?</h2>
+    <div class="table-wrap"><table class="grid" id="grid"></table></div>
+    <p class="small muted">Click a cell to see the answer.</p>
+    <div class="answer-box hidden" id="answer-box"></div>
+  </section>
+
+  <section class="card hidden" id="chart-card">
+    <h2>Context size sent at each user turn <span class="muted small">(~tokens)</span></h2>
+    <div id="chart"></div>
+    <div class="legend" id="legend"></div>
+  </section>
+
+  <section class="card hidden" id="state-card">
+    <h2>What the compacting strategies kept</h2>
+    <div class="columns" id="states"></div>
+  </section>
+
+  <section class="card lesson hidden" id="lesson"></section>
+  <section class="card error hidden" id="error-card"></section>
+</main>
+
+<script src="/static/nav.js"></script>
+<script src="/static/util.js"></script>
+<script src="static/app.js"></script>
+</body>
+</html>

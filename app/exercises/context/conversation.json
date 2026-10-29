@@ -1,0 +1,38 @@
+{
+  "title": "Planning a week in Japan (24 messages)",
+  "messages": [
+    {"role": "user", "content": "Hi! I'm planning a 7-day trip to Japan in April with my partner. Our total budget is $3,200 for both of us, and the flights are already booked."},
+    {"role": "assistant", "content": "Lovely — April is cherry-blossom season, so book hotels early. With flights covered, $3,200 for two over 7 days is about $230 a day: enough for mid-range hotels, rail passes and good food if you're a little careful. Where do you land, and which cities interest you most?"},
+    {"role": "user", "content": "Important: I have a severe peanut allergy, so any food tips need to account for that."},
+    {"role": "assistant", "content": "Noted, and thank you for flagging it. Peanuts are less common in Japanese cooking than in some cuisines, but they appear in some sauces, sweets and dressings. Carry an allergy card in Japanese, keep your epinephrine with you, and be careful with satay-style dishes, some dango and certain sesame-peanut dressings. I'll keep it in mind for every suggestion."},
+    {"role": "user", "content": "We land in Tokyo on day 1 and fly home from Tokyo too. I'd like to keep hotels around $150 a night."},
+    {"role": "assistant", "content": "That's very doable. In Tokyo, $150 a night gets a comfortable business hotel in Shinjuku, Ueno or Asakusa. In Kyoto, look near Kyoto Station or Shijo for the same price. Since you start and end in Tokyo, a loop like Tokyo → Kyoto → back to Tokyo keeps the travel simple."},
+    {"role": "user", "content": "Honestly, I want to skip Osaka entirely — we've been there before."},
+    {"role": "assistant", "content": "Makes sense — then Kyoto is your base in the Kansai region. You'll still be close to Nara and Uji for day trips if you want them, without spending nights in Osaka."},
+    {"role": "user", "content": "My sister Maya will join us on day 3 in Kyoto; she's flying in from Seoul."},
+    {"role": "assistant", "content": "Great — flights from Seoul land at Kansai (KIX) or Osaka Itami; from KIX the Haruka express gets her to Kyoto Station in about 75 minutes. If you take the shinkansen from Tokyo on the morning of day 3, you can meet her at the station around midday."},
+    {"role": "user", "content": "For Kyoto, which temples are worth it if we only have two days?"},
+    {"role": "assistant", "content": "With two days, pick by area to avoid crossing the city. Day A (east): Kiyomizu-dera early, walk down Sannenzaka and Ninenzaka, then Kodai-ji and Yasaka Shrine, ending in Gion at dusk. Day B (north-west): Kinkaku-ji when it opens, Ryoan-ji's rock garden, then Arashiyama's bamboo grove and Tenryu-ji. Add Fushimi Inari very early one morning — the gates are quiet before 8am. Expect crowds everywhere in blossom season."},
+    {"role": "user", "content": "Great. Let's do Nara as a day trip on day 5 — Maya loves the deer."},
+    {"role": "assistant", "content": "Perfect choice. The Kintetsu line from Kyoto takes about 45 minutes. Start at Nara Park with the deer (buy the official deer crackers, and keep food out of sight), then Todai-ji's great Buddha hall and Kasuga Taisha. It's an easy, walkable day and you'll be back in Kyoto for dinner."},
+    {"role": "user", "content": "What's the best way to get from Kyoto back to Tokyo?"},
+    {"role": "assistant", "content": "The Nozomi shinkansen: about 2 hours 15 minutes, roughly $95 per person one way. Reserve seats on the right side (seats E) for a chance to see Mount Fuji on a clear day. Luggage forwarding (takkyubin) from your hotel is worth it if you have big suitcases."},
+    {"role": "user", "content": "Good news — my bonus came through, so our total budget is now $3,800."},
+    {"role": "assistant", "content": "Congratulations! With $3,800 you have about $600 extra. Worth spending on one special experience: a night in a ryokan with a kaiseki dinner (tell them about the peanut allergy when booking), or a tea ceremony in Kyoto."},
+    {"role": "user", "content": "Can you suggest a rainy-day activity in Tokyo?"},
+    {"role": "assistant", "content": "teamLab Planets in Toyosu is great in the rain — immersive digital art you walk through barefoot. Book timed tickets in advance. The Tokyo National Museum in Ueno and the depachika food halls in Ginza department stores are good indoor options too."},
+    {"role": "user", "content": "My partner is vegetarian, by the way. Any ramen places that work for both of us?"},
+    {"role": "assistant", "content": "Yes — T's Tantan inside Tokyo Station serves fully vegan ramen, and Kyoto has several vegetarian ramen shops near Shijo. Most standard ramen broths use pork or fish, so look for places that are explicitly vegetarian or vegan, and still mention your peanut allergy, since some tantan broths use nut pastes."},
+    {"role": "user", "content": "Let's make day 7 a relaxed shopping day in Shibuya before the evening flight."},
+    {"role": "assistant", "content": "Good plan. Store luggage at your hotel or in Shibuya Station lockers, visit Shibuya Sky in the morning, then browse Parco and the backstreets of Okusibu. Leave Shibuya by mid-afternoon to reach the airport with time to spare."}
+  ],
+  "probes": [
+    {"id": "budget", "question": "What is our total trip budget now?", "expected": ["3,800", "3800"], "planted": 17, "note": "updated — the old value was $3,200"},
+    {"id": "allergy", "question": "What food allergy do I have?", "expected": ["peanut"], "planted": 3},
+    {"id": "hotel", "question": "What's my hotel budget per night?", "expected": ["150"], "planted": 5},
+    {"id": "skip", "question": "Which city did I say I want to skip?", "expected": ["Osaka"], "planted": 7},
+    {"id": "sister", "question": "What's my sister's name, and which day does she join us?", "expected": ["Maya"], "planted": 9},
+    {"id": "day5", "question": "What did we plan for day 5?", "expected": ["Nara"], "planted": 13},
+    {"id": "partner", "question": "What's my partner's dietary restriction?", "expected": ["vegetarian"], "planted": 21}
+  ]
+}
