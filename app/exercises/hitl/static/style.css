@@ -20,3 +20,5 @@
 .approval input { width: 100%; border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font: inherit; margin-top: 6px; }
 .note { font-style: italic; color: var(--muted); font-size: 13px; margin: 0 0 8px; }
 .card.final { background: var(--merged-bg); border-color: var(--accent); }
+#world { overflow-x: auto; }
+.event code.args { overflow-wrap: anywhere; }

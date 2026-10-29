@@ -16,3 +16,4 @@
 .banner { margin-top: 10px; }
 .kept { font-size: 12.5px; color: var(--muted); }
 .card.final { background: var(--merged-bg); border-color: var(--accent); }
+.step .trace:empty, .columns .trace:empty { display: none; }

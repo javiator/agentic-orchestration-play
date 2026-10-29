@@ -26,7 +26,14 @@ agentic RAG side by side over a fictional handbook in
 both pipelines + grounding check in `pipelines.py`), `code-agent` (ReAct
 loop with one `run_python` tool; `sandbox.py` runs each script in a fresh
 limited subprocess with a stripped env — NOT a security boundary, keep that
-docstring accurate), and `eval` (runs
+docstring accurate), `router` (small-model classifier → route per
+request, escalation, vs always-strong), `planner` (validated step DAG run in
+parallel waves, replan on failure), `chain` (single prompt vs prompt chain,
+spec checked by code in `spec.py`), `reflection` (writer/critic loop with
+stop rules), `hitl` (risk-tiered tool approvals that pause the run; decisions
+arrive via `POST api/decide/{job_id}`), `guardrails` (layered input/output
+checks in `guards.py`), `context` (four context strategies replayed over
+`conversation.json` and quizzed), and `eval` (runs
 single-model baselines + every exercise with `Exercise.run` over a JSON
 question set in `app/exercises/eval/datasets/`; scores exact match + LLM
 grader 1–5, latency, calls/tokens; results in `eval.db`, gitignored).
@@ -41,6 +48,11 @@ Shared plumbing every exercise should use:
 - `track_usage()` in `llm.py` — counts calls/tokens of everything run inside
   it (ContextVar, so gathered sub-tasks count too); trackers nest, so an
   exercise can meter its parts while the eval meters the whole run.
+- `metered(awaitable)` in `llm.py` → `(result, {calls, tokens, cost,
+  latency})` for side-by-side comparisons; `cost` is USD from LiteLLM's
+  price table (0 for unknown/local models and in mock mode).
+- `headless_answer(pipeline, pick)` in `jobs.py` — the usual body of
+  `Exercise.run`.
 - `embed()` in `llm.py` — embeddings via LiteLLM (not mocked; the rag
   exercise falls back to BM25 without it).
 - `Exercise.run` (optional) — `async (question) -> answer` without a UI; the
@@ -49,7 +61,13 @@ Shared plumbing every exercise should use:
   Headless runs
   must not write to user-facing stores (consensus passes
   `RunOptions(remember=False)`).
-- `/static/util.js` — `$`, `esc`, `mdLite`, `show`, `hide` for exercise pages.
+- `/static/util.js` — `$`, `esc`, `mdLite`, `show`, `hide`, plus
+  `runJob(url, fields, onEvent)` (start + SSE → Promise of the `done`
+  event), `sampleChips()`, `usageText()`. `base.css` has shared classes
+  (`.setup`, `.samples`, `.badge`, `.columns`, `.lesson`, `.notice`, `pre.box`).
+- Exercise page convention: `api/info` (config + `samples`), `api/run`
+  (form fields) → `{job_id}`, `api/stream/{job_id}` (SSE). `scripts/smoke_test.py`
+  relies on it — add a case there when adding an exercise.
 - **Mock mode** (`MOCK_MODELS=true`, works without `.env`): canned replies +
   fake tool results. Use it to verify UI/flow changes with no keys; it does
   not replace a real end-to-end run.
@@ -62,8 +80,10 @@ Shared plumbing every exercise should use:
 ```
 
 Requires a `.env` (copy `.env.example`) with `MODEL_1..N`, `JUDGE_MODEL`, and
-matching provider API keys. There is no test suite; verify changes by running
-a real query end-to-end:
+matching provider API keys. There is no unit-test suite;
+`scripts/smoke_test.py` runs every exercise once against a running server
+(PASS/FAIL per exercise, answers in `smoke_report.json`). Or verify one
+exercise by hand:
 
 ```bash
 # toggles/session are optional form fields; booleans as "true"/"false"

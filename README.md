@@ -64,6 +64,13 @@ a checkbox in the UI so you can study one at a time; all can coexist.
 | `supervisor` — Supervisor & Specialists | A supervisor LLM delegates to researcher/analyst/writer via a `delegate` tool | Dynamic routing, agents as tools, shared state, loop guards |
 | `rag` — Plain RAG vs Agentic RAG | One question through a fixed retrieve-then-answer pipeline and an agent that uses search as a tool, side by side | Multi-hop retrieval, query rewriting, grounding checks, the cost of agency |
 | `code-agent` — Code-Executing Agent | ReAct loop whose only tool runs Python in a limited subprocess | Exact answers by computation, self-correction from tracebacks, sandboxing |
+| `router` — Router | A small model classifies each request → small model / strong model / strong + tools / decline, with escalation on low confidence; compared with "always strong" | Cost vs quality routing, escalation, traffic mix |
+| `planner` — Planner–Executor | Planner emits a step graph up front; workers run independent steps in parallel waves; replan on failure | Planning vs step-by-step control, parallelism, replanning |
+| `chain` — Prompt Chain vs Single Prompt | One big prompt vs outline → parallel sections → assemble, with code gates and targeted fix rounds, scored by code checks | Workflows vs agents, gates, structured output |
+| `reflection` — Reflection Loop | Writer drafts, critic scores + lists issues, writer revises; stops at target / plateau / budget; keeps the best version | Self-critique, stop conditions, diminishing returns |
+| `hitl` — Human-in-the-Loop | Support agent over a fake shop; risky tool calls pause for approve / edit / reject | Risk-tiered autonomy, interrupt & resume, feedback |
+| `guardrails` — Guardrails | Same bot (secret in its prompt) unguarded vs layered input/output checks, against attacks | Prompt injection, PII, defence in depth, false positives |
+| `context` — Context Management | One scripted conversation replayed with full history / sliding window / summary / fact notes, then quizzed | What each memory strategy forgets, and what it costs |
 | `eval` — Eval Harness | Runs single models + every exercise over a question set; exact match + LLM grader, latency, cost | Measuring orchestration instead of eyeballing it |
 
 ### Plain RAG vs Agentic RAG (`/rag/`)
@@ -104,6 +111,35 @@ size, process count; the whole process group is killed on timeout).
 Run the Eval Harness on the `code` question set to compare single models
 (guessing) with the agent (computing).
 
+### More exercises
+
+Each page explains its pattern, offers sample inputs that show where it
+wins and loses, and reports calls / tokens / time (and USD cost where
+LiteLLM knows the model's price). The teaching docstring at the top of each
+exercise's `orchestrator.py` (or `agent.py`) has the diagram and trade-offs.
+
+- **Router** (`/router/`): "Route all samples" shows the traffic mix a router
+  would see; one request with "compare" shows routed vs always-strong cost.
+- **Planner–Executor** (`/planner/`): tick "inject a failure" to watch a replan
+  keep finished work and route around the failed step.
+- **Prompt Chain** (`/chain/`): the spec is checked by plain code, so both
+  strategies are scored objectively; the chain fixes only the failed checks.
+- **Reflection** (`/reflection/`): try "Self-critique" vs "Independent critic"
+  on the same task and compare how generous the scores are.
+- **Human-in-the-Loop** (`/hitl/`): reject the email with feedback and watch the
+  agent revise it; each run gets a fresh copy of the fake shop.
+- **Guardrails** (`/guardrails/`): the sample attacks escalate from blunt to
+  subtle; the trace shows which layer caught each one and what it cost.
+- **Context Management** (`/context/`): click quiz cells to see answers; the
+  chart shows context growing per turn for each strategy.
+
+### Smoke test
+
+`scripts/smoke_test.py` runs one representative request through every
+exercise against a running server and prints PASS/FAIL, time and calls
+(answers saved to `smoke_report.json`). Run it after `./start.sh` with real
+keys to check every provider path works: `.venv/bin/python scripts/smoke_test.py`.
+
 ## Code tour
 
 The repo is a playground of exercises: the landing page at `/` lists every
@@ -115,7 +151,7 @@ with `cp -r app/exercises/_template app/exercises/<name>` and a unique slug.
 |---|---|
 | `app/main.py` | Root app: auto-discovers exercises, mounts each at `/<slug>/`, serves the landing page and `/api/exercises`. |
 | `app/exercises/consensus/orchestrator.py` | The core. Commented stages: **fan-out** (`asyncio.gather` launches all agents at once), **independent execution** (each agent isolated, with its own timeout/error capture), **judge synthesis** (a separate model call that returns JSON: merged answer, disagreements, agreement summary, omissions), plus the optional **rebuttal round** and memory recall/write hooks. `RunOptions` carries the per-run feature toggles. |
-| `app/core/agent_loop.py` | The ReAct tool loop (used when tool use is on): call model → execute requested tools → append results → repeat until a final answer; last iteration withholds tools to force an answer. |
+| `app/core/agent_loop.py` | The ReAct tool loop (used when tool use is on): call model → execute requested tools → append results → repeat until a final answer; the last iteration adds an "answer now" instruction. |
 | `app/core/tools.py` | Tool schemas + executors: `search_web` (DuckDuckGo via ddgs), `fetch_url` (httpx + HTML stripping), `search_documents` (keyword retrieval over attachments). |
 | `app/exercises/consensus/memory.py` | Long-term memory: SQLite store of past verdicts, keyword `recall()`, and the context block injected when memory is enabled. |
 | `app/core/config.py` | Env-driven model layer: reads `MODEL_1..N` + `JUDGE_MODEL` (LiteLLM model strings) and optional per-model `_API_BASE`/`_API_KEY` overrides. |
@@ -179,5 +215,14 @@ and the judge), and run. You'll see:
 | `RAG_TOP_K` / `RAG_MAX_STEPS` / `RAG_VERIFY_ROUNDS` | RAG exercise: passages per search (4), agent step budget (6), grounding-check retries (1) |
 | `CODE_MODEL` | Code agent: model that writes and runs code (default: `MODEL_1`) |
 | `CODE_MAX_STEPS` / `CODE_TIMEOUT` / `CODE_MEMORY_MB` | Code agent: step budget (8), per-run timeout in seconds (10), memory cap per run (512) |
+| `ROUTER_MODEL` / `ROUTER_SMALL_MODEL` / `ROUTER_STRONG_MODEL` | Router: the classifier (default: small), cheap tier (default `MODEL_1`), strong tier (default `JUDGE_MODEL`) |
+| `ROUTER_MIN_CONFIDENCE` | Router: decisions below this escalate to a safer path (0.6) |
+| `PLANNER_MODEL` / `PLANNER_MAX_STEPS` / `PLANNER_MAX_REPLANS` | Planner: planning + synthesis model (default `JUDGE_MODEL`), steps per plan (6), replans (1) |
+| `CHAIN_MODEL` / `CHAIN_FIX_ROUNDS` | Prompt chain: model for both strategies (default `MODEL_1`), fix rounds after the spec gate (2) |
+| `REFLECTION_WRITER_MODEL` / `REFLECTION_CRITIC_MODEL` | Reflection: writer (default `MODEL_1`), independent critic (default `JUDGE_MODEL`) |
+| `REFLECTION_MAX_ROUNDS` / `REFLECTION_TARGET` | Reflection: max critique rounds (3), score that stops the loop (8/10) |
+| `HITL_MODEL` / `HITL_AUTO_APPROVE_LIMIT` / `HITL_APPROVAL_TIMEOUT` / `HITL_MAX_STEPS` | Human-in-the-loop: agent model (`MODEL_1`), refunds auto-approved up to $50, seconds to wait for a decision (600), step budget (10) |
+| `BOT_MODEL` / `GUARD_MODEL` / `GUARD_OUTPUT_POLICY` | Guardrails: the support bot and the classifier/policy checker (both `MODEL_1`), output policy check on/off (true) |
+| `CONTEXT_MODEL` / `CONTEXT_WINDOW_MESSAGES` / `CONTEXT_COMPACT_EVERY` / `CONTEXT_KEEP_RECENT` | Context: model (`MODEL_1`), window size (6), compaction cadence (8), raw messages kept (4) |
 | `MOCK_MODELS` | `true` = canned replies + fake tools, no keys or network (default false) |
 | Provider keys | `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GEMINI_API_KEY`, … as your models require |
