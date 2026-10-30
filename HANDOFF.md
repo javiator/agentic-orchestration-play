@@ -19,6 +19,7 @@ Read `AGENTS.md` first for the architecture and conventions.
   https://claude.ai/artifact/SUThwKKxSD1rYuc57WdKYd.
   `scripts/videos/hub_videos.json` maps each slug to its uploaded file.
 - PR: javiator/agentic-orchestration-play#1, branch `claude/cool-cray-49w0rp`.
+- **Next builds:** five ideas for tools built on the video pipeline are in `IDEAS.md`.
 
 ## Resume in a fresh cloud session
 
