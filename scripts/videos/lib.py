@@ -69,6 +69,7 @@ class Narrator:
     def say(self, text: str) -> tuple[Path, float]:
         """Text → (wav path, seconds). Cached by content."""
         text = re.sub(r"(^|\s)-(\d)", r"\1minus \2", text)  # Piper reads "-43%" as "43%"
+        text = re.sub(r"(\d)/(\d)", r"\1 out of \2", text).replace("×", " times").replace("→", " to ")
         key = hashlib.sha1(f"{VOICE}|{self.config.length_scale}|{text}".encode()).hexdigest()[:16]
         path = CACHE / "tts" / f"{key}.wav"
         if not path.exists():

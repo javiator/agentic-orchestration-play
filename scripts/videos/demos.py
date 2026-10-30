@@ -83,9 +83,7 @@ def demo_consensus(d: Demo) -> None:
                     else "The judge found no substantive disagreements this time, so no rebuttal was needed."),
            "Rebuttal round", "#rebuttal-card",
            wait="#disagreements-card:not(.hidden)", wait_cap="rebuttal + second judge round…")
-    d.step(lambda: f"Done. {d.text('#rebuttal-body p')} The rebuttal round narrowed the disagreement: the "
-                   "agents converged where the evidence was clear.", "Disagreements shrank", "#rebuttal-card",
-           hold=1.5)
+    d.step(lambda: _rebuttal_say(d), "Did rebuttal shrink them?", "#rebuttal-card", hold=1.5)
     d.step("Here's what's left. Each disagreement has a topic, and under it, which model claimed what. This is "
            "the most useful part: it tells you exactly where to double-check.", "Disagreements, attributed",
            "#disagreements-card", hold=2.5,
@@ -94,6 +92,18 @@ def demo_consensus(d: Demo) -> None:
            "#agents-grid .revised-badge", hold=1.0)
     d.step("And the merged answer: one synthesis, written by the judge from all the successful answers, with "
            "the timing showing what parallel execution saved.", "The merged answer", "#merged-card", hold=3.0)
+
+
+def _rebuttal_say(d: Demo) -> str:
+    nums = re.findall(r"\d+", d.text("#rebuttal-body p"))
+    if len(nums) < 2:
+        return "Done. The judge's verdict is in."
+    before, after = int(nums[0]), int(nums[1])
+    head = f"Done. Round one had {_plural(before, 'disagreement')}; after the rebuttal, {after} {'remains' if after == 1 else 'remain'}. "
+    if after < before:
+        return head + "The agents converged where the evidence was clear."
+    return head + ("The agents held their positions. When models keep disagreeing after seeing each other's "
+                   "evidence, that's a real open question, worth checking yourself.")
 
 
 # ── 2 router ─────────────────────────────────────────────────────────────────
@@ -217,7 +227,10 @@ def demo_chain(d: Demo) -> None:
            "Fix round?", "#v-chain .steps", hold=1.5)
     d.step(lambda: f"Final score: the chain passed {d.text('#v-chain .score')}.", "Checks: chain vs single",
            "#v-chain .checks", hold=1.5)
-    d.step(lambda: f"{d.text('#verdict')[:260]}", "Was it worth it?", "#verdict", hold=3.0)
+    d.step(lambda: f"{d.text('#verdict').split('Try')[0][:220]} Run it a few times, though: in ten test runs "
+                   "across the samples, the single prompt missed the word count twice, and the chain passed every "
+                   "time. The gates turn usually right into reliably right.", "Was it worth it?", "#verdict",
+           hold=3.0)
 
 
 # ── 6 RAG ────────────────────────────────────────────────────────────────────
@@ -325,8 +338,10 @@ def demo_hitl(d: Demo) -> None:
            "time.", "Reject with feedback", "last:.approval",
            action=lambda: _decide(d, "reject", "Warmer and shorter, and mention the 5-7 day refund time."),
            wait=pending, wait_cap="agent revising the email…")
-    d.step("The rejected email was not sent. The feedback went into the conversation, and the agent wrote a "
-           "new draft. Approve.", "Revised email", "last:.approval",
+    d.step(lambda: ("The rejected email was not sent. The feedback went into the conversation, and the agent "
+                    "wrote a new draft. Approve." if _count(d, ".approval button.approve:not([disabled])") else
+                    "The rejected email was not sent, and the feedback went back into the conversation."),
+           "Revised email", "last:.approval",
            action=lambda: _count(d, ".approval button.approve:not([disabled])") and _decide(d, "approve"),
            wait="#final-card:not(.hidden)", wait_cap="agent finishing…")
     d.step("Only the approved email is in the outbox.", "The outbox", "#world .outbox", hold=1.5)

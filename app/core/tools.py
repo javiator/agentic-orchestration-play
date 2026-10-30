@@ -87,6 +87,12 @@ def tool_schemas(has_documents: bool) -> list[dict]:
     return schemas
 
 
+# Parallel agents searching at once trip DuckDuckGo's rate limits and drop
+# connections; a small cap plus retries keeps most searches succeeding.
+_SEARCH_SLOTS = asyncio.Semaphore(2)
+SEARCH_ATTEMPTS = 3
+
+
 async def _search_web(query: str) -> str:
     """DuckDuckGo search via the ddgs package (no API key). The library is
     synchronous, so run it in a thread to keep the fan-out non-blocking."""
@@ -96,10 +102,17 @@ async def _search_web(query: str) -> str:
         with DDGS() as ddgs:
             return list(ddgs.text(query, max_results=5))
 
-    try:
-        results = await asyncio.to_thread(_run)
-    except Exception as exc:
-        return f"search_web failed: {exc}"
+    results: list[dict] = []
+    for attempt in range(SEARCH_ATTEMPTS):
+        try:
+            async with _SEARCH_SLOTS:
+                results = [r for r in await asyncio.to_thread(_run) if r.get("href")]
+            break
+        except Exception as exc:
+            # ddgs raises on "no results" too; retrying that is cheap.
+            if attempt == SEARCH_ATTEMPTS - 1:
+                return f"search_web failed: {exc}"
+            await asyncio.sleep(1.0 * (attempt + 1))
     if not results:
         return "No results found."
     return "\n\n".join(
