@@ -270,7 +270,8 @@ def demo_reflection(d: Demo) -> None:
            wait="#scoreboard:not(.hidden)")
     d.step("Each bar is a version's score. The line is the target.", "Score bars", "#scoreboard",
            wait="#lesson:not(.hidden)", wait_cap="write → critique → revise…")
-    d.step(lambda: f"{d.text('#lesson')[:240]}", "Stop reason", "#lesson", hold=1.5)
+    d.step(lambda: f"{_lesson(d)} Most of the value, or the damage, shows up in the first round.", "Stop reason",
+           "#lesson", hold=1.5)
     d.step(lambda: ("Each version shows the critic's specific issues. Click show changes to see exactly what "
                     "the revision changed." if _count(d, ".toggle-diff")
                     else "The critic's notes are right under the draft: specific and checkable, not vague."),
@@ -279,8 +280,14 @@ def demo_reflection(d: Demo) -> None:
     d.step("Now the same task with self-critique: the writer grades its own work.", "Self-critique",
            ".modes", action=lambda: d.page.locator("input[name=mode][value=self]").check())
     d.step("Run.", "Run", "#run", click="#run", wait="#lesson:not(.hidden)", wait_cap="self-critique loop…")
-    d.step(lambda: f"Self-critique: {d.text('#lesson')[:200]} Compare the score with the independent critic: "
+    d.step(lambda: f"Self-critique: {_lesson(d)} Compare the score with the independent critic: "
                    "models tend to be generous with their own work.", "Generous grader?", "#scoreboard", hold=3.0)
+
+
+def _lesson(d: Demo) -> str:
+    """The reflection lesson line, without its UI hints."""
+    text = d.text("#lesson").split("Every round")[0].split("Gain per round")[0]
+    return text.replace("(plateau)", "").replace("—", ",").strip()
 
 
 # ── 8 code agent ─────────────────────────────────────────────────────────────
@@ -295,20 +302,27 @@ def demo_code_agent(d: Demo) -> None:
     d.step("Step one: the model wrote Python, and the sandbox ran it in a fresh process. Here is the code, and "
            "below it, the real output.", "Write, then run", "#timeline .card:first-of-type",
            wait="#final-card:not(.hidden)", wait_cap="running code…", hold=1.5)
-    d.step(lambda: ("One run failed. The traceback went back to the model as-is, and the next step fixed the "
-                    "code. That's real feedback from the world, not an opinion."
-                    if _count(d, "#timeline .out.err") else
-                    "Every run succeeded this time; when one fails, the traceback goes straight back to the model "
-                    "and it fixes the code."),
-           "Traceback → fix", "#timeline .out.err, #timeline .card", hold=2.0)
+    d.step(_traceback_say(d), "Traceback → fix", "#timeline .out.err, #timeline .card", hold=2.0)
     d.step(lambda: f"The answer, with exact numbers: {d.text('#final-body')[:200]}", "Computed, not guessed",
            "#final-card", hold=2.5)
+    d.step("A second question: did the East region sell more or fewer units in 2025, and how did its revenue "
+           "change?", "Another question", "#question", action=lambda: d.page.locator("#samples > *").nth(1).click())
+    d.step("Run.", "Run", "#run", click="#run", wait="#final-card:not(.hidden)", wait_cap="write, run, read…")
+    d.step(_traceback_say(d), "Traceback → fix", "#timeline .out.err, #timeline .card", hold=2.0)
+    d.step(lambda: f"{d.text('#final-body')[:220]}", "Exact answer", "#final-card", hold=2.5)
     d.step("Remember this runs model-written code on this machine. The sandbox limits time and memory, but it "
            "is not real isolation. Read sandbox dot py before exposing anything like this.", "Sandbox caveat",
            "#final-card", hold=1.5)
 
 
 # ── 9 HITL ───────────────────────────────────────────────────────────────────
+
+def _traceback_say(d: Demo):
+    return lambda: ("A run failed here. The traceback went back to the model as-is, and the next step fixed the "
+                    "code. That's real feedback from the world, not an opinion." if _count(d, "#timeline .out.err")
+                    else "Every run succeeded this time. When one fails, the traceback goes straight back to the "
+                         "model, and it fixes the code.")
+
 
 def _decide(d: Demo, decision: str, feedback: str = "") -> None:
     card = d.page.locator(".approval").last
@@ -345,7 +359,7 @@ def demo_hitl(d: Demo) -> None:
            action=lambda: _count(d, ".approval button.approve:not([disabled])") and _decide(d, "approve"),
            wait="#final-card:not(.hidden)", wait_cap="agent finishing…")
     d.step("Only the approved email is in the outbox.", "The outbox", "#world .outbox", hold=1.5)
-    d.step(lambda: f"The summary for the operator. {d.text('#final-card .lesson, #final-card p.muted', '')[:160]}",
+    d.step(lambda: f"The summary for the operator. {d.text('#final-card .lesson', '').split('Try')[0].replace('—', ',')}",
            "Done", "#final-card", hold=3.0)
 
 
@@ -410,9 +424,21 @@ def demo_context(d: Demo) -> None:
                    "older than its last few messages.", "Who remembered what", "#grid tr.total", hold=2.0)
     d.step("The token chart. Full history grows every turn. The window stays flat. Summary and notes saw-tooth: "
            "they grow, then compact.", "Cost per turn", "#chart-card", hold=2.5)
-    d.step("At the bottom, what the summary and notes actually kept. The summary is prose: the gist. The notes "
-           "are a list of specific facts, and the changed budget was overwritten, not appended.",
-           "Summary vs notes", "#state-card", hold=3.0)
+    d.step("Click a cell to see the actual answer. Here's a question the sliding window missed: the fact was "
+           "planted early, so it had already scrolled out of the window.", "Why the window missed",
+           "#answer-box", action=lambda: d.page.locator("#grid td.cell[data-key^='window|'] .badge.bad").first.click(),
+           hold=2.0)
+    d.step(lambda: _notes_say(d), "Summary vs notes", "#state-card", hold=3.0)
+
+
+def _notes_say(d: Demo) -> str:
+    notes = d.text("#states .state:last-child pre")
+    facts = notes.count("- ")
+    budget = ("and the changed budget was overwritten, not appended." if "3,800" in notes or "3800" in notes
+              else "but check whether it kept the updated budget.")
+    return ("At the bottom, what the summary and notes actually kept. The summary is prose: it keeps the gist. "
+            f"The notes are a list of {facts} specific facts, {budget} This is the idea behind memory features "
+            "in assistants.")
 
 
 # ── 12 eval ──────────────────────────────────────────────────────────────────

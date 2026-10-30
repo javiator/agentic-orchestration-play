@@ -62,7 +62,9 @@ NOTES_SYSTEM = """\
 Maintain a list of durable facts about the user for future turns: plans,
 constraints, preferences, people, numbers, decisions. Merge the current
 notes with the new messages; when a fact changes, REPLACE the old value.
-Output only the updated notes, one fact per line starting with "- "."""
+Output the COMPLETE updated list: keep every current note that still holds
+(word for word), then add the new facts. Never drop a note just because the
+new messages don't mention it. One fact per line starting with "- "."""
 
 
 def tokens(messages: list[dict[str, Any]]) -> int:
