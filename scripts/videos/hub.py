@@ -1,8 +1,8 @@
 """Render the learning-hub page (one HTML file) from content.py.
 
-    .videovenv/bin/python scripts/videos/hub.py [video_urls.json] > hub.html
+    .videovenv/bin/python scripts/videos/hub.py scripts/videos/hub_videos.json > hub.html
 
-video_urls.json maps slug → video URL (the uploaded artifact assets);
+hub_videos.json maps slug → video URL (the files uploaded to the hub artifact);
 without it, videos point at out/<slug>.mp4 for local viewing.
 """
 
