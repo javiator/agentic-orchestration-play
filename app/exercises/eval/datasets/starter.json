@@ -1,0 +1,47 @@
+{
+  "name": "Starter mix",
+  "description": "Checkable facts, a trick question, and open-ended answers scored against a rubric.",
+  "questions": [
+    {
+      "id": "arith",
+      "question": "What is 17 × 23?",
+      "expected": "391"
+    },
+    {
+      "id": "berlin-wall",
+      "question": "In what year did the Berlin Wall fall?",
+      "expected": "1989"
+    },
+    {
+      "id": "capital-au",
+      "question": "What is the capital city of Australia?",
+      "expected": "Canberra"
+    },
+    {
+      "id": "austen",
+      "question": "Who wrote the novel 'Pride and Prejudice'?",
+      "expected": "Jane Austen"
+    },
+    {
+      "id": "bat-ball",
+      "question": "A bat and a ball cost $1.10 in total. The bat costs $1.00 more than the ball. How much does the ball cost?",
+      "expected": ["$0.05", "0.05", "5 cents", "five cents"],
+      "rubric": "The ball costs $0.05 (5 cents). Answering $0.10 is the classic wrong answer."
+    },
+    {
+      "id": "latency-throughput",
+      "question": "Explain the difference between latency and throughput, with one concrete example of each.",
+      "rubric": "Latency = time for one operation/request to complete; throughput = amount of work completed per unit time. Must give a correct concrete example of each and not conflate them. Bonus for noting they can trade off (e.g. batching raises throughput but can raise latency)."
+    },
+    {
+      "id": "microservices",
+      "question": "What are the main tradeoffs of microservices versus a monolith for a 5-person engineering team? Give a recommendation.",
+      "rubric": "Should cover operational overhead (deploys, monitoring, distributed debugging, network failures), team-size fit, independent scaling/deploys as the main benefits, and data consistency challenges. A strong answer recommends a (modular) monolith for a 5-person team with a path to split later, and justifies it."
+    },
+    {
+      "id": "sql-injection",
+      "question": "What is SQL injection and what is the primary way to prevent it?",
+      "rubric": "Explains that untrusted input is interpreted as part of a SQL query. Primary prevention: parameterized queries / prepared statements (not just escaping or input validation). Mentioning least-privilege DB accounts is a plus."
+    }
+  ]
+}

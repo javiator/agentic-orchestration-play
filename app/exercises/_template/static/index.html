@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Single model call</title>
+<link rel="stylesheet" href="/static/base.css">
+</head>
+<body>
+<header>
+  <h1>Single model call</h1>
+  <p class="sub">Starter exercise: one prompt, one model, one answer.</p>
+</header>
+
+<main>
+  <section class="card">
+    <label for="prompt">Prompt</label>
+    <textarea id="prompt" rows="3"></textarea>
+    <p><button id="ask">Ask</button></p>
+  </section>
+  <section class="card hidden" id="answer-card">
+    <h2 id="answer-title"></h2>
+    <div id="answer" class="markdown"></div>
+  </section>
+  <section class="card error hidden" id="error-card"></section>
+</main>
+
+<!-- Relative URLs ("api/ask", "static/...") resolve under /<slug>/, so the
+     slug is only defined once, in __init__.py. -->
+<script src="/static/nav.js"></script>
+<script>
+  const $ = (id) => document.getElementById(id);
+  $("ask").addEventListener("click", async () => {
+    const prompt = $("prompt").value.trim();
+    if (!prompt) return;
+    $("ask").disabled = true;
+    $("error-card").classList.add("hidden");
+    try {
+      const form = new FormData();
+      form.append("prompt", prompt);
+      const res = await fetch("api/ask", { method: "POST", body: form });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || res.statusText);
+      $("answer-title").textContent = `Answer from ${data.model}`;
+      $("answer").textContent = data.answer;
+      $("answer-card").classList.remove("hidden");
+    } catch (err) {
+      $("error-card").textContent = err.message;
+      $("error-card").classList.remove("hidden");
+    } finally {
+      $("ask").disabled = false;
+    }
+  });
+</script>
+</body>
+</html>

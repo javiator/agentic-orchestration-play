@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Stop the Multi-Model Research Consensus app.
+# Stop the playground server.
 set -euo pipefail
 cd "$(dirname "$0")"
 

@@ -1,0 +1,24 @@
+/* HITL-exercise styles; shared base comes from /static/base.css. */
+.tiers { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); gap: 10px; margin-bottom: 8px; }
+.tier { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font-size: 13px; }
+.tier code { color: var(--accent); }
+.world-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.world-table th, .world-table td { text-align: left; padding: 4px 6px; border-bottom: 1px solid var(--line); }
+.world-table tr.changed td { background: #dcfce7; transition: background 1s; }
+.outbox { margin-top: 8px; font-size: 12.5px; }
+.tl-head { margin-top: 20px; }
+.event { padding: 10px 14px; margin-bottom: 10px; }
+.event .head { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 13.5px; }
+.event .head .meta { margin-left: auto; color: var(--muted); font-size: 12px; }
+.event code.args { display: block; margin-top: 6px; font-size: 12px; white-space: pre-wrap; color: var(--muted); }
+.event .result { font-size: 12.5px; margin-top: 4px; }
+.approval { border: 2px solid var(--warn-line); background: var(--warn-bg); }
+.approval textarea { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; margin-top: 6px; }
+.approval .buttons { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.approval button.reject { background: var(--fail); }
+.approval button.edit { background: var(--card); color: var(--accent); border: 1px solid var(--accent); }
+.approval input { width: 100%; border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font: inherit; margin-top: 6px; }
+.note { font-style: italic; color: var(--muted); font-size: 13px; margin: 0 0 8px; }
+.card.final { background: var(--merged-bg); border-color: var(--accent); }
+#world { overflow-x: auto; }
+.event code.args { overflow-wrap: anywhere; }

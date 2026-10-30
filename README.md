@@ -39,37 +39,127 @@ disagreed.
 Three classic agent concepts are layered on top of the base pipeline. Each has
 a checkbox in the UI so you can study one at a time; all can coexist.
 
-- **Tool use** (`app/tools.py`, `app/agent_loop.py`) — each agent becomes a
+- **Tool use** (`app/core/tools.py`, `app/core/agent_loop.py`) — each agent becomes a
   ReAct loop: it can call `search_web` (DuckDuckGo), `fetch_url`, and
   `search_documents` (over your attachments), observe results, and iterate
   until it answers (capped by `MAX_TOOL_ITERATIONS`). Every tool call streams
   to the UI as a per-agent research trace, so you can watch different models
   research differently.
-- **Rebuttal round** (stage 4 in `app/orchestrator.py`) — if the round-1
+- **Rebuttal round** (stage 4 in `app/exercises/consensus/orchestrator.py`) — if the round-1
   judge finds disagreements, each agent is shown the disputed points and the
   other models' claims, defends or revises in parallel, and the judge
   re-synthesizes. The UI shows "N disagreements → M remaining after rebuttal".
-- **Memory** (`app/memory.py` + sessions in `app/main.py`) — three layers:
+- **Memory** (`memory.py` + sessions in `routes.py`, both in `app/exercises/consensus/`) — three layers:
   *working memory* (an agent's own tool-call transcript within one loop),
   *session memory* (ask follow-up questions; prior turns are injected into
   every agent's context), and *long-term memory* (every verdict is stored in
   SQLite `memory.db`; with the toggle on, related past findings are recalled
   into new queries and shown in the UI).
 
+## Exercises
+
+| Exercise | Pattern | What it teaches |
+|---|---|---|
+| `consensus` — Multi-Model Research Consensus | Static fan-out + judge (above) | Parallelism, synthesis, tool use, rebuttal, memory |
+| `supervisor` — Supervisor & Specialists | A supervisor LLM delegates to researcher/analyst/writer via a `delegate` tool | Dynamic routing, agents as tools, shared state, loop guards |
+| `rag` — Plain RAG vs Agentic RAG | One question through a fixed retrieve-then-answer pipeline and an agent that uses search as a tool, side by side | Multi-hop retrieval, query rewriting, grounding checks, the cost of agency |
+| `code-agent` — Code-Executing Agent | ReAct loop whose only tool runs Python in a limited subprocess | Exact answers by computation, self-correction from tracebacks, sandboxing |
+| `router` — Router | A small model classifies each request → small model / strong model / strong + tools / decline, with escalation on low confidence; compared with "always strong" | Cost vs quality routing, escalation, traffic mix |
+| `planner` — Planner–Executor | Planner emits a step graph up front; workers run independent steps in parallel waves; replan on failure | Planning vs step-by-step control, parallelism, replanning |
+| `chain` — Prompt Chain vs Single Prompt | One big prompt vs outline → parallel sections → assemble, with code gates and targeted fix rounds, scored by code checks | Workflows vs agents, gates, structured output |
+| `reflection` — Reflection Loop | Writer drafts, critic scores + lists issues, writer revises; stops at target / plateau / budget; keeps the best version | Self-critique, stop conditions, diminishing returns |
+| `hitl` — Human-in-the-Loop | Support agent over a fake shop; risky tool calls pause for approve / edit / reject | Risk-tiered autonomy, interrupt & resume, feedback |
+| `guardrails` — Guardrails | Same bot (secret in its prompt) unguarded vs layered input/output checks, against attacks | Prompt injection, PII, defence in depth, false positives |
+| `context` — Context Management | One scripted conversation replayed with full history / sliding window / summary / fact notes, then quizzed | What each memory strategy forgets, and what it costs |
+| `eval` — Eval Harness | Runs single models + every exercise over a question set; exact match + LLM grader, latency, cost | Measuring orchestration instead of eyeballing it |
+
+### Plain RAG vs Agentic RAG (`/rag/`)
+
+Both variants use the same model (`RAG_MODEL`, default `MODEL_1`), the same
+20-document fictional company handbook (`app/exercises/rag/corpus/`) and the
+same search layer (`retrieval.py`: one chunk per `## ` section, BM25, or
+hybrid BM25 + embeddings fused by rank when `EMBEDDING_MODEL` is set).
+
+- **Plain** — one search with the user's exact words → top-k passages → answer with citations.
+- **Agentic** — `search_docs` / `read_doc` tools in a loop: the agent breaks the
+  question into facts, writes its own queries, follows leads across documents,
+  then a **grounding check** asks whether the evidence supports the answer and
+  sends it back to search if not. Guards: step budget (`RAG_MAX_STEPS`),
+  repeated-query block, `RAG_VERIFY_ROUNDS`.
+
+Sample questions cover one-fact lookups (both do fine), multi-hop (e.g. a
+policy names a *role*, the org chart names the *person* — plain RAG usually
+retrieves only one side) and unanswerable ones. After each run the page shows
+the "cost of agency" (calls, tokens, time ratios). For numbers over many
+questions, run the Eval Harness on the `rag` question set with both RAG targets.
+
+### Code-Executing Agent (`/code-agent/`)
+
+The model (`CODE_MODEL`, default `MODEL_1`) gets one tool, `run_python`. Each
+call runs a complete script in a fresh process inside a temp directory holding
+`data/sales.csv`; the model sees the exit code, stdout and stderr, and fixes its
+code when a run fails. Guards: step budget (`CODE_MAX_STEPS`), blocked re-runs
+of identical code, and per-run limits (`CODE_TIMEOUT`, `CODE_MEMORY_MB`, file
+size, process count; the whole process group is killed on timeout).
+
+> **Safety:** the code runs on your machine as your user. API keys are kept out
+> of its environment, but it can still read your files and reach the network —
+> it is a playground, not a security sandbox. Use models you trust; for real
+> isolation swap `Workspace.run_python()` in `sandbox.py` for a container or
+> microVM (Docker `--network=none`, gVisor, Firecracker, a hosted sandbox).
+
+Run the Eval Harness on the `code` question set to compare single models
+(guessing) with the agent (computing).
+
+### More exercises
+
+Each page explains its pattern, offers sample inputs that show where it
+wins and loses, and reports calls / tokens / time (and USD cost where
+LiteLLM knows the model's price). The teaching docstring at the top of each
+exercise's `orchestrator.py` (or `agent.py`) has the diagram and trade-offs.
+
+- **Router** (`/router/`): "Route all samples" shows the traffic mix a router
+  would see; one request with "compare" shows routed vs always-strong cost.
+- **Planner–Executor** (`/planner/`): tick "inject a failure" to watch a replan
+  keep finished work and route around the failed step.
+- **Prompt Chain** (`/chain/`): the spec is checked by plain code, so both
+  strategies are scored objectively; the chain fixes only the failed checks.
+- **Reflection** (`/reflection/`): try "Self-critique" vs "Independent critic"
+  on the same task and compare how generous the scores are.
+- **Human-in-the-Loop** (`/hitl/`): reject the email with feedback and watch the
+  agent revise it; each run gets a fresh copy of the fake shop.
+- **Guardrails** (`/guardrails/`): the sample attacks escalate from blunt to
+  subtle; the trace shows which layer caught each one and what it cost.
+- **Context Management** (`/context/`): click quiz cells to see answers; the
+  chart shows context growing per turn for each strategy.
+
+### Smoke test
+
+`scripts/smoke_test.py` runs one representative request through every
+exercise against a running server and prints PASS/FAIL, time and calls
+(answers saved to `smoke_report.json`). Run it after `./start.sh` with real
+keys to check every provider path works: `.venv/bin/python scripts/smoke_test.py`.
+
 ## Code tour
+
+The repo is a playground of exercises: the landing page at `/` lists every
+module in `app/exercises/` (this consensus app is `consensus`, served at
+`/consensus/`); shared building blocks live in `app/core/`. Start a new one
+with `cp -r app/exercises/_template app/exercises/<name>` and a unique slug.
 
 | File | What it does |
 |---|---|
-| `app/orchestrator.py` | The core. Commented stages: **fan-out** (`asyncio.gather` launches all agents at once), **independent execution** (each agent isolated, with its own timeout/error capture), **judge synthesis** (a separate model call that returns JSON: merged answer, disagreements, agreement summary, omissions), plus the optional **rebuttal round** and memory recall/write hooks. `RunOptions` carries the per-run feature toggles. |
-| `app/agent_loop.py` | The ReAct tool loop (used when tool use is on): call model → execute requested tools → append results → repeat until a final answer; last iteration withholds tools to force an answer. |
-| `app/tools.py` | Tool schemas + executors: `search_web` (DuckDuckGo via ddgs), `fetch_url` (httpx + HTML stripping), `search_documents` (keyword retrieval over attachments). |
-| `app/memory.py` | Long-term memory: SQLite store of past verdicts, keyword `recall()`, and the context block injected when memory is enabled. |
-| `app/config.py` | Env-driven model layer: reads `MODEL_1..N` + `JUDGE_MODEL` (LiteLLM model strings) and optional per-model `_API_BASE`/`_API_KEY` overrides. |
-| `app/main.py` | FastAPI layer. `POST /api/query` (multipart: query, context, files, toggles, session_id) returns a job id; `GET /api/stream/{job_id}` relays orchestrator events as SSE. Also owns session memory (follow-up turns). |
-| `app/files.py` | Parses uploads (txt/md/csv as text, pdf via pypdf); parsed text goes into the one shared user message every agent receives. |
-| `app/static/` | No-build-step UI: `index.html` + `app.js` (submits the form, consumes SSE, renders panels/traces/rounds/memories) + `style.css`. |
+| `app/main.py` | Root app: auto-discovers exercises, mounts each at `/<slug>/`, serves the landing page and `/api/exercises`. |
+| `app/exercises/consensus/orchestrator.py` | The core. Commented stages: **fan-out** (`asyncio.gather` launches all agents at once), **independent execution** (each agent isolated, with its own timeout/error capture), **judge synthesis** (a separate model call that returns JSON: merged answer, disagreements, agreement summary, omissions), plus the optional **rebuttal round** and memory recall/write hooks. `RunOptions` carries the per-run feature toggles. |
+| `app/core/agent_loop.py` | The ReAct tool loop (used when tool use is on): call model → execute requested tools → append results → repeat until a final answer; the last iteration adds an "answer now" instruction. |
+| `app/core/tools.py` | Tool schemas + executors: `search_web` (DuckDuckGo via ddgs), `fetch_url` (httpx + HTML stripping), `search_documents` (keyword retrieval over attachments). |
+| `app/exercises/consensus/memory.py` | Long-term memory: SQLite store of past verdicts, keyword `recall()`, and the context block injected when memory is enabled. |
+| `app/core/config.py` | Env-driven model layer: reads `MODEL_1..N` + `JUDGE_MODEL` (LiteLLM model strings) and optional per-model `_API_BASE`/`_API_KEY` overrides. |
+| `app/exercises/consensus/routes.py` | FastAPI router at `/consensus/`. `POST api/query` (multipart: query, context, files, toggles, session_id) returns a job id; `GET api/stream/{job_id}` relays orchestrator events as SSE. Also owns session memory (follow-up turns). |
+| `app/core/files.py` | Parses uploads (txt/md/csv as text, pdf via pypdf); parsed text goes into the one shared user message every agent receives. |
+| `app/exercises/consensus/static/` | No-build-step UI: `index.html` + `app.js` (submits the form, consumes SSE, renders panels/traces/rounds/memories) + `style.css`. Shared `base.css`, nav bar and landing page are in `app/static/`. |
 
-A query flows: browser form → `POST /api/query` → background `run_consensus()`
+A query flows: browser form → `POST /consensus/api/query` → background `run_consensus()`
 task pushes events onto an `asyncio.Queue` → SSE relays them → UI flips each
 model panel from pulsing to green/red as its agent finishes, then renders the
 judge's verdict.
@@ -90,9 +180,12 @@ cp .env.example .env
 ```
 
 `PORT=9000 ./start.sh` to use another port. Logs go to `server.log`.
+No API keys yet? `MOCK_MODELS=true ./start.sh` runs every exercise with canned
+model replies and fake tool results, so you can explore the flows for free.
 (Manual alternative: `.venv/bin/uvicorn app.main:app --port 8000`.)
 
-Open http://localhost:8000 — type a question, optionally add free-text context
+Open http://localhost:8000, pick **Multi-Model Research Consensus** (or go
+straight to http://localhost:8000/consensus/) — type a question, optionally add free-text context
 and attach files (txt/md/csv/pdf; parsed and given identically to every agent
 and the judge), and run. You'll see:
 
@@ -113,4 +206,23 @@ and the judge), and run. You'll see:
 | `AGENT_TIMEOUT` | Per-agent timeout in seconds (default 120; applies per model call inside the tool loop) |
 | `MAX_TOKENS` | Cap for research answers and judge synthesis (default 6000) |
 | `MAX_TOOL_ITERATIONS` | Max reason→act→observe cycles per agent with tool use on (default 6) |
+| `SUPERVISOR_MODEL` | Supervisor exercise: the model that delegates (default: `JUDGE_MODEL`) |
+| `MAX_SUPERVISOR_TURNS` | Supervisor exercise: max decisions per run; the last must finish (default 8) |
+| `GRADER_MODEL` | Eval exercise: the LLM grader (default: `JUDGE_MODEL`) |
+| `EVAL_CONCURRENCY` | Eval exercise: (target, question) pairs run at once (default 2) |
+| `RAG_MODEL` | RAG exercise: model for both variants (default: `MODEL_1`) |
+| `EMBEDDING_MODEL` | RAG exercise: optional LiteLLM embedding model → hybrid search (default: BM25 only) |
+| `RAG_TOP_K` / `RAG_MAX_STEPS` / `RAG_VERIFY_ROUNDS` | RAG exercise: passages per search (4), agent step budget (6), grounding-check retries (1) |
+| `CODE_MODEL` | Code agent: model that writes and runs code (default: `MODEL_1`) |
+| `CODE_MAX_STEPS` / `CODE_TIMEOUT` / `CODE_MEMORY_MB` | Code agent: step budget (8), per-run timeout in seconds (10), memory cap per run (512) |
+| `ROUTER_MODEL` / `ROUTER_SMALL_MODEL` / `ROUTER_STRONG_MODEL` | Router: the classifier (default: small), cheap tier (default `MODEL_1`), strong tier (default `JUDGE_MODEL`) |
+| `ROUTER_MIN_CONFIDENCE` | Router: decisions below this escalate to a safer path (0.6) |
+| `PLANNER_MODEL` / `PLANNER_MAX_STEPS` / `PLANNER_MAX_REPLANS` | Planner: planning + synthesis model (default `JUDGE_MODEL`), steps per plan (6), replans (1) |
+| `CHAIN_MODEL` / `CHAIN_FIX_ROUNDS` | Prompt chain: model for both strategies (default `MODEL_1`), fix rounds after the spec gate (2) |
+| `REFLECTION_WRITER_MODEL` / `REFLECTION_CRITIC_MODEL` | Reflection: writer (default `MODEL_1`), independent critic (default `JUDGE_MODEL`) |
+| `REFLECTION_MAX_ROUNDS` / `REFLECTION_TARGET` | Reflection: max critique rounds (3), score that stops the loop (8/10) |
+| `HITL_MODEL` / `HITL_AUTO_APPROVE_LIMIT` / `HITL_APPROVAL_TIMEOUT` / `HITL_MAX_STEPS` | Human-in-the-loop: agent model (`MODEL_1`), refunds auto-approved up to $50, seconds to wait for a decision (600), step budget (10) |
+| `BOT_MODEL` / `GUARD_MODEL` / `GUARD_OUTPUT_POLICY` | Guardrails: the support bot and the classifier/policy checker (both `MODEL_1`), output policy check on/off (true) |
+| `CONTEXT_MODEL` / `CONTEXT_WINDOW_MESSAGES` / `CONTEXT_COMPACT_EVERY` / `CONTEXT_KEEP_RECENT` | Context: model (`MODEL_1`), window size (6), compaction cadence (8), raw messages kept (4) |
+| `MOCK_MODELS` | `true` = canned replies + fake tools, no keys or network (default false) |
 | Provider keys | `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GEMINI_API_KEY`, … as your models require |

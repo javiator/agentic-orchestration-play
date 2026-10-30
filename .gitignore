@@ -12,5 +12,12 @@ server.log
 __pycache__/
 *.pyc
 
-# Long-term memory database
+# Long-term memory database / eval results
 memory.db
+eval.db
+smoke_report.json
+
+# Learning videos: build venv, caches and output (MP4s stay out of git)
+.videovenv
+scripts/videos/.cache/
+scripts/videos/out/

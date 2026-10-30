@@ -1,0 +1,45 @@
+/* Eval-exercise styles; shared base comes from /static/base.css. */
+.small { font-size: 12.5px; }
+select {
+  font: inherit; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px;
+  background: var(--card); min-width: 320px; max-width: 100%;
+}
+.targets { display: flex; flex-wrap: wrap; gap: 6px 18px; }
+.toggle { display: flex; gap: 8px; align-items: baseline; font-weight: 400; margin: 0; font-size: 14px; }
+.actions { display: flex; align-items: center; gap: 14px; margin-top: 16px; }
+.mock-badge {
+  font-size: 11px; font-weight: 600; border-radius: 999px; padding: 1px 8px; margin-left: 6px;
+  background: var(--warn-bg); border: 1px solid var(--warn-line); color: #92400e;
+}
+.byline { font-weight: 400; color: var(--muted); font-size: 13px; }
+
+details.guide summary { cursor: pointer; }
+details.guide ul { margin: 10px 0 0; padding-left: 20px; font-size: 13.5px; }
+details.guide li { margin-bottom: 4px; }
+
+.table-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+th, td { border-bottom: 1px solid var(--line); padding: 7px 10px; text-align: left; vertical-align: top; }
+th { font-size: 12.5px; color: var(--muted); font-weight: 600; white-space: nowrap; }
+td.best { background: #dcfce7; font-weight: 700; }
+td.q { min-width: 240px; }
+td.q code { color: var(--muted); font-size: 12px; }
+td.cell { cursor: pointer; white-space: nowrap; }
+td.cell:hover { background: var(--bg); }
+
+.badge {
+  display: inline-block; min-width: 26px; text-align: center; border-radius: 6px;
+  padding: 0 6px; margin-right: 4px; font-size: 12.5px; font-weight: 700;
+  background: var(--bg); border: 1px solid var(--line);
+}
+.badge.good, .badge.g5, .badge.g4 { background: #dcfce7; border-color: #86efac; color: #166534; }
+.badge.g3 { background: var(--warn-bg); border-color: var(--warn-line); color: #92400e; }
+.badge.bad, .badge.g2, .badge.g1 { background: #fee2e2; border-color: #fca5a5; color: #991b1b; }
+.bad-text { color: var(--fail); }
+
+.detail {
+  margin-top: 12px; border: 1px solid var(--line); border-radius: 8px;
+  padding: 12px 14px; background: var(--bg);
+}
+.detail h3 { margin: 0 0 8px; font-size: 14px; }
+.detail .answer { max-height: 320px; overflow-y: auto; font-size: 13.5px; }

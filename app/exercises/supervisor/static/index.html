@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Supervisor &amp; Specialists</title>
+<link rel="stylesheet" href="/static/base.css">
+<link rel="stylesheet" href="static/style.css">
+</head>
+<body>
+<header>
+  <h1>Supervisor &amp; Specialists</h1>
+  <p class="sub">A supervisor agent decides, turn by turn, which specialist acts next &mdash; and when the job is done</p>
+</header>
+
+<main>
+  <!-- ── Team roster (from api/info) ───────────────────────── -->
+  <section class="card">
+    <h2>The team <span id="mock-badge" class="mock-badge hidden">mock mode</span></h2>
+    <div class="roster" id="roster"></div>
+  </section>
+
+  <!-- ── Goal ──────────────────────────────────────────────── -->
+  <section class="card">
+    <label for="goal">Goal for the team</label>
+    <textarea id="goal" rows="3" placeholder="e.g. Should a 10-person startup self-host Postgres or use a managed service? Give a recommendation with costs."></textarea>
+    <div class="actions">
+      <button id="run">Run supervisor</button>
+      <span id="limits" class="muted"></span>
+    </div>
+  </section>
+
+  <!-- ── Live timeline: one block per supervisor turn ─────────── -->
+  <section class="hidden" id="timeline-section">
+    <h2>Timeline <span id="stats" class="stats"></span></h2>
+    <div id="timeline"></div>
+  </section>
+
+  <section class="card final hidden" id="final-card">
+    <h2>Final answer <span class="byline" id="final-byline"></span></h2>
+    <div id="final-body" class="markdown"></div>
+  </section>
+
+  <section class="card error hidden" id="error-card"></section>
+</main>
+
+<script src="/static/nav.js"></script>
+<script src="/static/util.js"></script>
+<script src="static/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Planner–Executor</title>
+<link rel="stylesheet" href="/static/base.css">
+<link rel="stylesheet" href="static/style.css">
+</head>
+<body>
+<header>
+  <h1>Planner&ndash;Executor</h1>
+  <p class="sub">Plan the whole job as a graph of steps, run independent steps in parallel, replan when something fails</p>
+</header>
+
+<main>
+  <section class="card">
+    <h2>Setup <span id="mock-badge" class="mock-badge hidden">mock mode</span></h2>
+    <div class="setup" id="setup"></div>
+  </section>
+
+  <section class="card">
+    <label for="goal">Goal</label>
+    <textarea id="goal" rows="2" placeholder="A goal with independent parts works best, e.g. compare two options and recommend one"></textarea>
+    <div class="samples" id="samples"></div>
+    <label class="check"><input type="checkbox" id="inject"> Inject a failure into the 2nd step to see replanning</label>
+    <div class="actions"><button id="run">Plan &amp; run</button></div>
+  </section>
+
+  <section id="plans"></section>
+
+  <section class="card final hidden" id="final-card">
+    <h2>Final answer <span class="stats" id="stats"></span></h2>
+    <div id="final-body" class="markdown"></div>
+    <p class="lesson small" id="lesson"></p>
+  </section>
+  <section class="card error hidden" id="error-card"></section>
+</main>
+
+<script src="/static/nav.js"></script>
+<script src="/static/util.js"></script>
+<script src="static/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Multi-Model Research Consensus</title>
+<link rel="stylesheet" href="/static/base.css">
+<link rel="stylesheet" href="static/style.css">
+</head>
+<body>
+<header>
+  <h1>Multi-Model Research Consensus</h1>
+  <p class="sub">One question &rarr; independent answers from <span id="model-count">…</span> models &rarr; judged, merged, disagreements flagged</p>
+</header>
+
+<main>
+  <!-- ── Query form ─────────────────────────────────────────── -->
+  <section class="card" id="query-card">
+    <div id="session-banner" class="session-banner hidden">
+      <span id="session-label"></span>
+      <button id="new-session" class="link-btn" type="button">Start new session</button>
+    </div>
+
+    <label for="query" id="query-label">Research question</label>
+    <textarea id="query" rows="3" placeholder="e.g. What are the main tradeoffs between RAG and long-context approaches for enterprise document QA?"></textarea>
+
+    <label for="context">Additional context <span class="optional">(optional, given identically to every agent)</span></label>
+    <textarea id="context" rows="2" placeholder="Any framing, constraints, or background the agents should consider"></textarea>
+
+    <label>Attach files <span class="optional">(txt / md / csv / pdf — parsed and shared with all agents and the judge)</span></label>
+    <input type="file" id="files" multiple accept=".txt,.md,.markdown,.csv,.pdf">
+    <ul id="file-list" class="file-list"></ul>
+
+    <!-- Feature toggles: each agentic concept can be enabled independently -->
+    <div class="toggles">
+      <label class="toggle">
+        <input type="checkbox" id="opt-tools">
+        <span><strong>Tool use</strong> — agents can search the web, fetch pages, and search your documents (research trace shown per agent)</span>
+      </label>
+      <label class="toggle">
+        <input type="checkbox" id="opt-rebuttal">
+        <span><strong>Rebuttal round</strong> — if the judge finds disagreements, agents see each other's claims, defend or revise, and the judge re-synthesizes</span>
+      </label>
+      <label class="toggle">
+        <input type="checkbox" id="opt-memory">
+        <span><strong>Long-term memory</strong> — recall related findings from past sessions into this query (every run is remembered either way)</span>
+      </label>
+    </div>
+
+    <div class="actions">
+      <button id="submit">Run consensus query</button>
+      <span id="judge-label" class="judge-label"></span>
+    </div>
+  </section>
+
+  <!-- ── Prior turns of this session ────────────────────────── -->
+  <section class="card hidden" id="history-card">
+    <h2>Session so far</h2>
+    <div id="history-body"></div>
+  </section>
+
+  <!-- ── Recalled long-term memories ────────────────────────── -->
+  <section class="card memory hidden" id="memory-card">
+    <h2>&#128173; Recalled from past sessions</h2>
+    <div id="memory-body"></div>
+  </section>
+
+  <!-- ── What was included (visible once a run starts) ─────── -->
+  <section class="card hidden" id="included-card">
+    <h2>Included in this run</h2>
+    <div id="included-body"></div>
+  </section>
+
+  <!-- ── Per-model panels: loading → answer/error ───────────── -->
+  <section class="hidden" id="agents-section">
+    <h2>Individual model answers <span id="timing-badge" class="timing-badge hidden"></span></h2>
+    <div class="agents-grid" id="agents-grid"></div>
+  </section>
+
+  <!-- ── Rebuttal round status ──────────────────────────────── -->
+  <section class="card rebuttal hidden" id="rebuttal-card">
+    <h2>&#8635; Rebuttal round</h2>
+    <div id="rebuttal-body"></div>
+  </section>
+
+  <!-- ── Merged answer, prominent ───────────────────────────── -->
+  <section class="card merged hidden" id="merged-card">
+    <h2>Merged consensus answer <span class="byline" id="judge-byline"></span></h2>
+    <p class="agreement-summary" id="agreement-summary"></p>
+    <div id="merged-body" class="markdown"></div>
+    <p class="omissions hidden" id="omissions"></p>
+  </section>
+
+  <!-- ── Disagreements, visually distinct & collapsible ─────── -->
+  <section class="card disagreements hidden" id="disagreements-card">
+    <h2 id="disagreements-title">&#9888; Disagreements between models</h2>
+    <div id="disagreements-body"></div>
+  </section>
+
+  <section class="card error hidden" id="error-card"></section>
+</main>
+
+<script src="/static/nav.js"></script>
+<script src="/static/util.js"></script>
+<script src="static/app.js"></script>
+</body>
+</html>

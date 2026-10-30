@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Router</title>
+<link rel="stylesheet" href="/static/base.css">
+<link rel="stylesheet" href="static/style.css">
+</head>
+<body>
+<header>
+  <h1>Router</h1>
+  <p class="sub">A cheap model decides which path each request takes &mdash; and how much it costs</p>
+</header>
+
+<main>
+  <section class="card">
+    <h2>Routes <span id="mock-badge" class="mock-badge hidden">mock mode</span></h2>
+    <div class="routes" id="routes"></div>
+    <p class="kv" id="router-info"></p>
+  </section>
+
+  <section class="card">
+    <label for="question">Request</label>
+    <textarea id="question" rows="2" placeholder="Ask anything — easy, hard, current events…"></textarea>
+    <div class="samples" id="samples"></div>
+    <label class="check"><input type="checkbox" id="compare" checked>
+      Also run without a router (always the strong model + tools) to compare cost</label>
+    <div class="actions">
+      <button id="run">Route &amp; answer</button>
+      <button id="classify" class="secondary">Route all samples (no answers)</button>
+    </div>
+  </section>
+
+  <section class="card decision hidden" id="decision"></section>
+
+  <section class="columns hidden" id="results">
+    <div class="card" id="col-routed"><h2><span class="status-dot"></span>Routed <span class="stats"></span></h2>
+      <div class="trace hidden"></div><div class="answer markdown"></div></div>
+    <div class="card" id="col-baseline"><h2><span class="status-dot"></span>Always strong + tools <span class="stats"></span></h2>
+      <div class="trace hidden"></div><div class="answer markdown"></div></div>
+  </section>
+  <section class="card hidden" id="savings"></section>
+
+  <section class="card hidden" id="batch">
+    <h2>Traffic mix <span class="stats" id="batch-stats"></span></h2>
+    <table class="batch"><thead><tr><th>Request</th><th>Route</th><th>Confidence</th><th>Reason</th></tr></thead>
+      <tbody id="batch-rows"></tbody></table>
+    <p class="lesson" id="batch-lesson"></p>
+  </section>
+
+  <section class="card error hidden" id="error-card"></section>
+</main>
+
+<script src="/static/nav.js"></script>
+<script src="/static/util.js"></script>
+<script src="static/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Eval Harness</title>
+<link rel="stylesheet" href="/static/base.css">
+<link rel="stylesheet" href="static/style.css">
+</head>
+<body>
+<header>
+  <h1>Eval Harness</h1>
+  <p class="sub">Same questions, every target: does orchestration actually beat a single model &mdash; and at what cost?</p>
+</header>
+
+<main>
+  <!-- ── Setup ─────────────────────────────────────────────── -->
+  <section class="card">
+    <h2>Set up a run <span id="mock-badge" class="mock-badge hidden">mock mode</span></h2>
+    <label for="dataset">Question set</label>
+    <select id="dataset"></select>
+    <p class="muted small" id="dataset-desc"></p>
+
+    <label>Targets <span class="optional">(each answers every question)</span></label>
+    <div class="targets" id="targets"></div>
+
+    <div class="actions">
+      <button id="run">Run eval</button>
+      <span class="muted small" id="run-info"></span>
+    </div>
+  </section>
+
+  <details class="card guide">
+    <summary><strong>Reading the numbers</strong></summary>
+    <ul>
+      <li><strong>Match</strong> — share of checkable questions whose expected answer appears in the response. Objective, but only for short facts.</li>
+      <li><strong>Grade</strong> — 1–5 from an LLM grader against a reference or rubric. Handles open answers, but the grader is a model too: it can favour longer answers or its own provider's style. Read the reasons, and prefer a grader that isn't also a candidate.</li>
+      <li><strong>Latency / calls / tokens</strong> — the price of a pattern. Calls and tokens count only the target's own model calls, not the grader's.</li>
+      <li>A handful of questions is a smoke test, not a benchmark: differences of a few points are noise. Add questions to <code>app/exercises/eval/datasets/</code> to get real signal.</li>
+    </ul>
+  </details>
+
+  <!-- ── Results ───────────────────────────────────────────── -->
+  <section class="card hidden" id="summary-card">
+    <h2>Summary <span class="byline" id="summary-byline"></span></h2>
+    <div class="table-wrap"><table id="summary-table"></table></div>
+  </section>
+
+  <section class="card hidden" id="grid-card">
+    <h2>Per question <span class="byline" id="progress"></span></h2>
+    <div class="table-wrap"><table id="grid"></table></div>
+    <p class="muted small">Click a cell to see the answer and the grader's reason.</p>
+    <div class="detail hidden" id="detail"></div>
+  </section>
+
+  <section class="card error hidden" id="error-card"></section>
+
+  <section class="card">
+    <h2>History</h2>
+    <div class="table-wrap"><table id="history"></table></div>
+  </section>
+</main>
+
+<script src="/static/nav.js"></script>
+<script src="/static/util.js"></script>
+<script src="static/app.js"></script>
+</body>
+</html>
