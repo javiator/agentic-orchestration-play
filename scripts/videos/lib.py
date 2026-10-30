@@ -208,9 +208,11 @@ class Demo:
     def caption(self, tag: str, text: str) -> None:
         self.page.evaluate(SET_CAPTION_JS, [tag, text])
 
-    def highlight(self, sel: str | None) -> None:
-        if not self.page.evaluate(HIGHLIGHT_JS, sel) and sel:
+    def highlight(self, sel: str | None, log: bool = True) -> bool:
+        found = bool(self.page.evaluate(HIGHLIGHT_JS, sel))
+        if not found and sel and log:
             self.log.append(f"highlight not found: {sel}")
+        return found
 
     def text(self, sel: str, default: str = "") -> str:
         """Visible text of the first match ("last:<sel>" for the last one)."""
@@ -255,7 +257,7 @@ class Demo:
         text = say() if callable(say) else say
         wav, dur = self.narrator.say(text)
         self.caption(tag or self.label, cap)
-        self.highlight(hl)
+        found = self.highlight(hl, log=False)
         start = self.now()
         self.narration.append({"t": start, "wav": str(wav), "dur": dur, "text": text})
         self.page.wait_for_timeout(500)
@@ -271,6 +273,9 @@ class Demo:
             self.page.locator(click).first.click()
         if action:
             action()
+        if hl and not found:  # the element may only appear after the action
+            self.page.wait_for_timeout(400)
+            self.highlight(hl)
         remaining = start + dur + 0.35 - self.now()
         if remaining > 0:
             self.page.wait_for_timeout(remaining * 1000)
