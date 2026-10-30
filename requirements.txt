@@ -1,6 +1,7 @@
 fastapi>=0.115
 uvicorn[standard]>=0.30
-litellm>=1.60
+# 1.106.x crashes on any call with tools= (imports the optional `mcp` package)
+litellm>=1.60,<1.106
 python-dotenv>=1.0
 python-multipart>=0.0.9
 pypdf>=5.0
