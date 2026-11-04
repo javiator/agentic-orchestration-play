@@ -1,0 +1,44 @@
+# Used by scripts/selftest.py against examples/testapp/. Exercises every action,
+# both wait kinds, highlight prefixes and the narration templating.
+slug: selftest
+kicker: demo-video self-test
+start: /index.html
+defaults: {tag: TEST, wait_caption: "working…"}
+concept:
+- {kind: title, title: Self-test, lead: Checks the whole pipeline., chips: [slides, recording, assembly], say: This is the self test.}
+- kind: boxes
+  title: Boxes
+  boxes: [{head: One, items: [a, b]}, {head: Two, items: [c]}]
+  say: Two boxes.
+- {kind: diagram, title: Diagram, diagram: "a ──▶ b\n└─▶ c", say: A diagram., pause: 0.5}
+steps:
+- say: Pick the second sample, a size, and tick agree.
+  caption: Inputs
+  highlight: '#form'
+  actions:
+  - click: {selector: '#samples > *', nth: 1}
+  - select: ['#size', large]
+  - check: '#agree'
+  - uncheck: 'all:.opt'
+  - check: 'first:.opt'
+- say: >-
+    Sample {js:document.getElementById('q').value}, size {js:document.getElementById('size').value},
+    {if:js:document.getElementById('agree').checked}agreed{else}not agreed{end}.
+  caption: Read back
+  highlight: 'last:#samples > *'
+- say: Run, and wait for the result.
+  caption: Run
+  highlight: '#run'
+  actions: [click: '#run']
+  wait: {until: '#out:not(.hidden)', timeout: 30, caption: computing…}
+- say: >-
+    {if:#out}The result is visible{else}No result{end}: {text:#result|before:(}, number {text:#result|num},
+    {plural:#samples > *|sample}, {count:.opt:checked} checked. {text:#note}
+  caption: Result
+  highlight: '#result'
+- say: These two are expected to fail. {text:#nope}
+  caption: Expected problems
+  highlight: '#missing'
+  wait: {until: "js:false", timeout: 2}
+outro:
+- {kind: takeaways, items: [one, two, three], say: Done., foot: examples/selftest.yaml}

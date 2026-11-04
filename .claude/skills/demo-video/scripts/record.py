@@ -292,7 +292,10 @@ class Demo:
             self.goto(spec["goto"])
         text = self.render_say(spec["say"])
         if self.narrator:
+            synth_start = self.now()
             wav, dur = self.narrator.say(text)
+            if self.now() - synth_start > 1.2:  # uncached TTS: cut the dead air
+                self.fast.append((synth_start + 0.2, self.now()))
         else:  # dry run: no TTS, ~2.6 words/s estimate, don't wait it out
             wav, dur = None, len(text.split()) / 2.6
         tag = spec.get("tag") or self.label
@@ -365,7 +368,7 @@ def _apply(val: str, filters: list[str]) -> str:
             if len(val) > n:
                 cut = val[:n]
                 ends = [m.end() for m in re.finditer(r"[.!?](?=\s)", cut + " ")]
-                val = cut[:ends[-1]] if ends and ends[-1] > n // 3 else cut.rsplit(" ", 1)[0] + "…"
+                val = cut[:ends[-1]] if ends and ends[-1] >= n // 3 else cut.rsplit(" ", 1)[0] + "…"
         elif name == "num":
             m = re.search(r"-?\d+(\.\d+)?", val)
             val = m.group(0) if m else (arg or "")
@@ -384,6 +387,10 @@ def record_demo(browser, narrator, base: str, script: dict, outdir: Path, shots:
     outdir.mkdir(parents=True, exist_ok=True)
     for old in outdir.glob("*.webm"):
         old.unlink()
+    if narrator:  # synthesize fixed lines now, so the recording doesn't wait for TTS
+        for step in script.get("steps") or []:
+            if "{" not in step["say"]:
+                narrator.say(re.sub(r"\s+", " ", step["say"]).strip())
     ctx = browser.new_context(viewport={"width": W, "height": H}, record_video_dir=str(outdir),
                               record_video_size={"width": W, "height": H}, device_scale_factor=1)
     page = ctx.new_page()

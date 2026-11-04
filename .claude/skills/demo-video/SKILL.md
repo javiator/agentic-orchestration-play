@@ -147,6 +147,14 @@ ln -s "$PWD/.claude/skills/demo-video" ~/.claude/skills/demo-video
 Or keep it in a project's `.claude/skills/`, or in its own repo. Requirements:
 Python 3.10+, ffmpeg with libass; everything else installs itself on first run.
 
+Check an install (or a change to the skill) with the self-test: unit checks plus a
+dry run and a full build against the bundled `examples/testapp/` (~1 min):
+
+```bash
+python3 ~/.claude/skills/demo-video/scripts/selftest.py           # in place
+python3 ~/.claude/skills/demo-video/scripts/selftest.py --fresh   # copy + empty cache: proves first-run setup
+```
+
 ## Setup and troubleshooting
 
 - **First run** creates `~/.cache/demo-video/venv` (uv if present, else venv+pip)

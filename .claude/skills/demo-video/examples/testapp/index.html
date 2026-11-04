@@ -1,0 +1,33 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Skill test app</title>
+<style>
+  body { font: 18px system-ui, sans-serif; margin: 0; padding: 30px 40px; background: #f5f6fa; color: #1b2033; }
+  .card { background: #fff; border: 1px solid #dde1ec; border-radius: 12px; padding: 18px 22px; margin-bottom: 18px; }
+  .hidden { display: none; }
+  #samples button { margin: 4px; }
+  #result { font-size: 26px; font-weight: 700; }
+</style></head>
+<body>
+<h1>Skill test app</h1>
+<section class="card" id="form">
+  <label>Question <input id="q" size="40"></label>
+  <label>Size <select id="size"><option>small</option><option>large</option></select></label>
+  <label><input type="checkbox" id="agree"> agree</label>
+  <label><input type="checkbox" class="opt" value="a" checked> a</label>
+  <label><input type="checkbox" class="opt" value="b" checked> b</label>
+  <div id="samples"><button>first sample</button><button>second sample</button><button>third sample</button></div>
+  <button id="run">Run</button>
+</section>
+<section class="card hidden" id="out">
+  <div id="result"></div>
+  <p id="note">Line one without punctuation<br>Line two.</p>
+</section>
+<script>
+  document.querySelectorAll('#samples button').forEach(b => b.onclick = () => { document.getElementById('q').value = b.textContent; });
+  document.getElementById('run').onclick = () => setTimeout(() => {
+    const q = document.getElementById('q').value;
+    document.getElementById('result').textContent = `Score: -43% on "${q}" after 6/6 runs (${document.querySelectorAll('.opt:checked').length} options)`;
+    document.getElementById('out').classList.remove('hidden');
+  }, 12000);
+</script>
+</body></html>
