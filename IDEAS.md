@@ -1,6 +1,7 @@
 # Ideas — next builds
 
-Follow-ups to the learning-video pipeline (`scripts/videos/`). What made that
+Follow-ups to the learning-video pipeline (the `demo-video` skill in
+`.claude/skills/demo-video/`, content in `demos/`). What made that
 work, and what each idea below keeps:
 
 - **The real system is the source of truth.** The app actually runs, and
@@ -22,10 +23,10 @@ a UI change; release notes are text.
 
 **How it works.** When a pull request opens, CI starts the app on that branch.
 A model reads the diff and PR description and writes the demo steps (the
-same `d.step(...)` format as `demos.py`). Playwright records them with
+same YAML format as `demos/*.yaml`). Playwright records them with
 captions and highlights, and the 2-minute narrated MP4 is posted to the PR.
 
-**Reuses.** `scripts/videos/lib.py` almost as is (recording, narration,
+**Reuses.** The `demo-video` skill as is (recording, narration,
 fast-forward, assembly).
 
 **New parts.** Generating steps from the diff; uploading the video and

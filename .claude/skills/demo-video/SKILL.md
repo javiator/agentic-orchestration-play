@@ -131,6 +131,22 @@ results are logged as problems.
 - Write for the ear: short sentences, numbers as the page shows them, no
   parentheses or symbols you wouldn't say.
 
+## Install
+
+The folder is self-contained (no imports from the project it came from). To use it
+from any project, copy or symlink it into your personal skills folder:
+
+```bash
+mkdir -p ~/.claude/skills && cp -r .claude/skills/demo-video ~/.claude/skills/demo-video
+```
+
+```bash
+ln -s "$PWD/.claude/skills/demo-video" ~/.claude/skills/demo-video
+```
+
+Or keep it in a project's `.claude/skills/`, or in its own repo. Requirements:
+Python 3.10+, ffmpeg with libass; everything else installs itself on first run.
+
 ## Setup and troubleshooting
 
 - **First run** creates `~/.cache/demo-video/venv` (uv if present, else venv+pip)

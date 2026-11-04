@@ -14,10 +14,13 @@ Read `AGENTS.md` first for the architecture and conventions.
     it; the output-policy check no longer blocks public pricing.
   - Context notes: compaction keeps the full list of notes.
 - **Learning videos**: one narrated MP4 per exercise plus an overview (13
-  total), built by `scripts/videos/`. The MP4s are gitignored.
+  total), built by the **`demo-video` skill** (`.claude/skills/demo-video/`,
+  self-contained, reusable for any web app). This repo only holds the
+  content: `demos/<slug>.yaml` (slides, narration, live steps, hub text).
+  The MP4s are gitignored (`videos/`).
 - **Learning hub** (private claude.ai artifact, with the videos uploaded to it):
   https://claude.ai/artifact/SUThwKKxSD1rYuc57WdKYd.
-  `scripts/videos/hub_videos.json` maps each slug to its uploaded file.
+  `demos/hub_videos.json` maps each slug to its uploaded file.
 - PR: javiator/agentic-orchestration-play#1, branch `claude/cool-cray-49w0rp`.
 - **Next builds:** five ideas for tools built on the video pipeline are in `IDEAS.md`.
 
@@ -38,29 +41,38 @@ Read `AGENTS.md` first for the architecture and conventions.
    (set -a; . ./.env; set +a; ./start.sh)
    .venv/bin/python scripts/smoke_test.py
    ```
-3. **Videos** (optional). Set up once, then build with the app running:
+3. **Videos** (optional), with the app running. See
+   `.claude/skills/demo-video/SKILL.md` for the workflow and YAML format. The
+   first run creates the skill's venv in `~/.cache/demo-video/`.
    ```bash
-   uv venv .videovenv && uv pip install -r scripts/videos/requirements.txt --python .videovenv/bin/python
-   .videovenv/bin/python scripts/videos/build.py rag         # one video; no args = all 13
-   .videovenv/bin/python scripts/videos/build.py rag --reuse  # re-assemble, keep the last recording
+   SKILL=.claude/skills/demo-video
+   python3 $SKILL/scripts/build.py demos/rag.yaml --out videos            # one video
+   python3 $SKILL/scripts/build.py demos/*.yaml --out videos              # all 13
+   python3 $SKILL/scripts/build.py demos/rag.yaml --out videos --reuse    # re-assemble, keep the recording
    ```
-   - Content: slide text and narration are in `content.py`; demo steps are in
-     `demos.py`.
-   - Dry-run demos against a mock server:
+   - Dry-run against a mock server (screenshots per step, no TTS):
      `MOCK_MODELS=true .venv/bin/uvicorn app.main:app --port 8001`, then
-     `BASE=http://localhost:8001`. Add `DEMO_SHOTS=<dir>` for a screenshot
-     after every step.
-   - Check `out/<slug>/demo/timeline.json` to confirm the narration matches
-     what the models actually did.
+     `build.py demos/rag.yaml --base http://localhost:8001 --out videos --dry-run`
+     (`videos/rag/shots/`). Mock HITL finishes after a reject and mock eval
+     is slow; those two report expected problems.
+   - Check `videos/<slug>/timeline.json` (problems + every narration line) to
+     confirm the narration matches what the models actually did.
+   - Slide diagrams are inlined in the YAML (they used to be read from each
+     exercise's docstring): update them when a docstring diagram changes.
 4. **Updating the hub.** Upload new MP4s to the artifact above as assets. Put
-   their URLs in `hub_videos.json`, run
-   `scripts/videos/hub.py scripts/videos/hub_videos.json`, and republish the
-   page to the same artifact URL.
+   their URLs in `demos/hub_videos.json`, then render and republish the page to
+   the same artifact URL:
+   ```bash
+   python3 .claude/skills/demo-video/scripts/hub.py demos/{overview,consensus,router,supervisor,planner,chain,rag,reflection,code-agent,hitl,guardrails,context,eval}.yaml \
+     --urls demos/hub_videos.json --title "Agentic Orchestration Playground — lessons" \
+     --intro "One narrated video per exercise: the concept, a live demo with real models, and three takeaways. Start with the 3-minute overview, then go in order, or jump to a pattern." \
+     --footer "Videos built with the demo-video skill · demos recorded against real models (OpenAI + Gemini)." > hub.html
+   ```
 
 ## Known loose ends
 
-- The consensus video says "1 remain"; it's fixed in `demos.py` and needs a
-  re-record (`build.py consensus`).
+- The consensus video says "1 remain"; it's fixed in `demos/consensus.yaml`
+  and needs a re-record.
 - Videos run 2.3–3.3 min, a bit under the original 3–5 min target.
 - Demo outcomes vary between runs; the narration adapts, but some runs miss
   a teaching moment (a failing code run, a chain fix round). Re-record when

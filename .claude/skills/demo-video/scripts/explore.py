@@ -107,7 +107,8 @@ def main() -> int:
         def snapshot(name: str) -> None:
             nonlocal n
             n += 1
-            stem = args.out / f"{n:02d}-{re.sub(r'[^\w-]+', '-', name).strip('-') or 'page'}"
+            safe = re.sub(r"[^\w-]+", "-", name).strip("-") or "page"
+            stem = args.out / f"{n:02d}-{safe}"
             page.screenshot(path=f"{stem}.png", full_page=True)
             Path(f"{stem}.md").write_text(to_md(page.evaluate(INVENTORY_JS)))
             print(f"  {stem}.png  {stem}.md")

@@ -201,5 +201,9 @@ curl -s -N "localhost:8000/consensus/api/stream/<job_id>?session_id=<sid>&query=
 - Code agent: real isolation = replace `Workspace.run_python()` in
   `app/exercises/code_agent/sandbox.py` (container/microVM); add data files
   to `app/exercises/code_agent/data/` and they're copied into every run.
+- Learning videos: one `demos/<slug>.yaml` per exercise, built by the
+  self-contained `demo-video` skill (`.claude/skills/demo-video/SKILL.md`).
+  When an exercise's UI changes (ids, samples), dry-run its demo
+  (`--dry-run` against mock mode) and fix the selectors.
 - Persistence: sessions currently die with the process; move `_sessions`
   into SQLite alongside long-term memory for durable multi-turn history.
