@@ -1,0 +1,23 @@
+/* Default slide theme (1280×800). Replace with --css your.css; keep the class names. */
+* { box-sizing: border-box; margin: 0; }
+body { width: 1280px; height: 800px; overflow: hidden; font-family: Inter, 'DejaVu Sans', sans-serif;
+       background: radial-gradient(circle at 15% 10%, #1e2a4a 0, #0d1324 55%); color: #e8ecf6;
+       padding: 64px 80px; display: flex; flex-direction: column; }
+.kicker { color: #8fa3d6; font-size: 22px; letter-spacing: .08em; text-transform: uppercase; font-weight: 600; }
+h1 { font-size: 64px; line-height: 1.1; font-weight: 800; margin-top: 18px; }
+h2 { font-size: 44px; font-weight: 750; margin: 10px 0 34px; }
+.lead { font-size: 30px; line-height: 1.45; color: #c4cde3; margin-top: 30px; max-width: 1000px; }
+.cols { display: grid; align-items: start; grid-template-columns: repeat(var(--n), 1fr); gap: 28px; flex: 1; }
+.box { background: #16203a; border: 1px solid #2b3a63; border-radius: 18px; padding: 28px 30px; }
+.box h3 { font-size: 22px; text-transform: uppercase; letter-spacing: .06em; color: #f5b94a; margin-bottom: 16px; }
+.box ul { padding-left: 24px; } .box li { font-size: 25px; line-height: 1.4; margin-bottom: 12px; color: #dbe2f2; }
+pre { font-family: 'DejaVu Sans Mono', monospace; color: #dbe7ff; background: #0a1020; border: 1px solid #2b3a63;
+      border-radius: 16px; padding: 26px 30px; line-height: 1.32; flex: 1; overflow: hidden; white-space: pre; }
+.take { display: flex; gap: 26px; align-items: flex-start; background: #16203a; border: 1px solid #2b3a63;
+        border-radius: 18px; padding: 26px 30px; margin-bottom: 22px; }
+.take .n { flex: none; width: 54px; height: 54px; border-radius: 50%; background: #f5b94a; color: #0d1324;
+           font-size: 28px; font-weight: 800; display: grid; place-items: center; }
+.take p { font-size: 30px; line-height: 1.35; padding-top: 6px; }
+.foot { margin-top: auto; color: #6f7fa8; font-size: 20px; }
+.chips { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 34px; }
+.chip { border: 1px solid #3a4c80; border-radius: 999px; padding: 8px 18px; font-size: 20px; color: #b9c6ea; }
