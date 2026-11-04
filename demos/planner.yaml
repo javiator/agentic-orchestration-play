@@ -1,0 +1,128 @@
+slug: planner
+kicker: Exercise 4 of 12 · Agentic Orchestration Playground
+start: /planner/
+defaults:
+  tag: DEMO
+  wait_caption: waiting for the models…
+concept:
+- kind: title
+  title: Planner–Executor
+  lead: Plan the whole job as a graph up front, run independent steps in parallel, replan when a step fails.
+  chips:
+  - task graph (DAG)
+  - parallel waves
+  - replanning
+  - synthesis
+  say: 'Exercise four: planner and executor. A planner model turns the goal into a graph of steps with dependencies,
+    all up front. Workers run the independent steps in parallel, and if a step fails, a replanner keeps the finished
+    work and plans only what''s left.'
+- kind: boxes
+  title: The problem — and when to use it
+  boxes:
+  - head: Problem
+    items:
+    - Deciding one step at a time is slow and sequential
+    - You can't review the work before it runs
+  - head: Use it when
+    items:
+    - Multi-part research or analysis
+    - You want parallelism and a readable plan
+  - head: Skip it when
+    items:
+    - Each step depends on surprises in the last
+    - A single call would do
+  say: 'The problem: an agent that decides one step at a time pays for a decision every turn, and tends to work
+    sequentially. A planner fits multi-part work where you want parallelism, and a plan you could read, or approve,
+    before anything runs.'
+- kind: diagram
+  title: How it works
+  diagram: |-
+    goal ──▶ PLANNER (one call) ──▶ plan = steps + dependencies (a DAG)
+                                     │   validated by code: ids, deps, no cycles
+                                     ▼
+              wave 1:  [s1 research]  [s2 research]     ← no deps: run in PARALLEL
+              wave 2:        [s3 think: needs s1, s2]
+              wave 3:        [s4 think: needs s3]
+                                     │
+                       a step FAILED? ──▶ REPLANNER: keeps finished work,
+                                     │    plans only what's left (≤ MAX_REPLANS)
+                                     ▼
+                         SYNTHESIZER ──▶ final answer
+  say: 'One planner call produces steps and their dependencies. Code validates the plan: ids, dependencies, no cycles.
+    Steps with no dependencies run together in the first wave; steps that need them wait for later waves. If a step
+    fails, the replanner keeps what''s done and plans only the remaining work. Finally a synthesizer writes the
+    answer from all the results.'
+  pause: 1.5
+steps:
+- say: The planner is the strong model, and the workers are the three research models.
+  caption: Planner + workers
+  highlight: '#setup'
+- say: 'The goal: compare Postgres and MongoDB for a small e-commerce startup, and recommend one.'
+  caption: The goal
+  highlight: '#goal'
+  actions: [click: '#samples > *']
+- say: And we'll tick inject failure, which makes one step fail on purpose, so we can watch a replan.
+  caption: Inject a failure
+  highlight: '#inject'
+  actions: [check: '#inject']
+- say: Run. One planner call turns the goal into a whole plan.
+  caption: Run
+  highlight: '#run'
+  actions: [click: '#run']
+  wait: {until: .plan, caption: planner drafting the plan…}
+- say: >-
+    Here's the plan: {text:.plan h2}. Steps with no dependencies sit in wave one and run in parallel.
+    Later steps list what they need.
+  caption: Plan waves
+  highlight: .plan
+  hold: 1.5
+- say: 'Wave one is running now: several workers at once.'
+  caption: Parallel wave
+  highlight: first:.plan .wave
+  wait: {until: .banner, caption: workers running…}
+- say: '{text:.banner}'
+  caption: A step failed
+  highlight: .plan .step.failed, .banner
+  hold: 1.5
+  wait: {until: "js:document.querySelectorAll('.plan').length >= 2", caption: replanning…}
+- say: >-
+    The revised plan. {text:last:.plan .kept}. Finished work is kept; only what's left is planned
+    again.
+  caption: Revised plan keeps finished steps
+  highlight: last:.plan .kept
+  hold: 1.5
+- say: The remaining steps run.
+  caption: Executing the rest
+  highlight: last:.plan
+  wait: {until: '#final-card:not(.hidden)', caption: remaining steps + synthesis…}
+- say: Done. {text:#lesson|max:220}
+  caption: Few decision calls
+  highlight: '#lesson'
+  hold: 1.5
+- say: And the synthesized answer, citing the step ids its evidence came from.
+  caption: The answer
+  highlight: '#final-body'
+  hold: 3.0
+outro:
+- kind: takeaways
+  items:
+  - Planning up front means fewer decision calls — and parallel waves.
+  - 'Code validates the plan: dependencies, ids, no cycles.'
+  - It commits early, so failures need an explicit replan that keeps finished work.
+  say: Takeaways. Planning up front means fewer decision calls, and steps run in parallel waves. Code, not a model,
+    validates the plan. And because a planner commits early, a failed step needs an explicit replan, one that keeps
+    the finished work.
+  pause: 2.0
+  foot: 'Code: app/exercises/planner/orchestrator.py'
+hub:
+  eyebrow: Exercise 4 of 12
+  toc_label: 4
+  title: Planner–Executor
+  summary: A planner turns the goal into a validated task graph; workers execute it in parallel waves; a deliberately
+    injected failure shows the replanner keeping finished steps and planning only the rest; a synthesizer writes
+    the final answer citing step ids.
+  tries:
+  - Compare PostgreSQL and MongoDB for a small e-commerce startup — with “inject failure” on
+  - Plan a 3-day trip to Lisbon for a family with two kids
+  - 'Compare the same goal in the Supervisor exercise: count the decision calls'
+  code: https://github.com/javiator/agentic-orchestration-play/blob/main/app/exercises/planner/orchestrator.py

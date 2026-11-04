@@ -1,0 +1,128 @@
+slug: rag
+kicker: Exercise 6 of 12 · Agentic Orchestration Playground
+start: /rag/
+defaults:
+  tag: DEMO
+  wait_caption: waiting for the models…
+concept:
+- kind: title
+  title: Plain RAG vs Agentic RAG
+  lead: 'Same question, model and documents: one fixed search, or an agent that searches like a researcher.'
+  chips:
+  - retrieval
+  - multi-hop
+  - query rewriting
+  - grounding check
+  say: 'Exercise six: plain retrieval-augmented generation versus agentic RAG. Both answer questions over the same
+    fictional company handbook, with the same model and the same search. The difference is who decides how to search.'
+- kind: boxes
+  title: The problem — and when to use it
+  boxes:
+  - head: Problem
+    items:
+    - Answers need facts from several documents
+    - The question's words don't match the documents
+  - head: Use it when
+    items:
+    - Multi-hop questions
+    - Messy wording, follow-the-lead lookups
+  - head: Skip it when
+    items:
+    - One-fact lookups — plain RAG is far cheaper
+    - Strict latency budgets
+  say: 'The problem: some questions need several facts from different documents, and a single search with the user''s
+    own words can''t follow a lead it hasn''t read yet. For one-fact lookups, though, plain RAG gets the same chunk,
+    much cheaper.'
+- kind: diagram
+  title: How it works
+  diagram: |-
+    question ──▶ search(question) ──▶ top-k chunks ──▶ model answers, citing chunks
+
+    question ──▶ ┌──────────────── agent loop (≤ RAG_MAX_STEPS) ───────────────┐
+                 │ model: what do I still need?                               │
+                 │   ├─ search_docs(query)  ← its own query: one fact at a    │
+                 │   │                        time, rephrased when it misses  │
+                 │   ├─ read_doc(doc_id)    ← whole document when a snippet   │
+                 │   │                        isn't enough                    │
+                 │   └─ answer (text)                                         │
+                 │        └─▶ GROUNDING CHECK: is every claim supported by    │
+                 │             what was retrieved? no → feedback, search more │
+                 └────────────────────────────────────────────────────────────┘
+  say: 'Plain RAG is a fixed pipeline: one search with the question, top chunks, answer. Agentic RAG makes search
+    a tool. The model decides what it still needs, writes its own queries, reads whole documents when a snippet
+    isn''t enough, and before answering, a grounding check asks whether every claim is supported by what it retrieved.
+    If not, it searches more.'
+  pause: 1.5
+steps:
+- say: >-
+    The corpus: twenty or so documents from a fictional company, indexed for keyword search. Both
+    strategies use the same model and the same search.
+  caption: Same model, docs and search
+  highlight: '#setup'
+- say: 'First question: who owns the postmortem for the April 2025 Beacon outage? Give the person''s name.'
+  caption: A multi-hop question
+  highlight: '#question'
+  actions: [click: {selector: '#samples > *', nth: 1}]
+- say: Run.
+  caption: Run
+  highlight: '#run'
+  actions: [click: '#run']
+  wait: {until: '#compare:not(.hidden)', caption: both strategies running…}
+- say: >-
+    Plain RAG made one search with the question's own words. It found the postmortem, which names a
+    role, the head of platform. But not the person.
+  caption: 'Plain: role, not person'
+  highlight: '#v-plain'
+  hold: 1.5
+- say: >-
+    The agent read the same passage, then made a second search for that role, and found the name in
+    the org chart. {plural:#v-agentic .step|step} in total.
+  caption: 'Agent: a second search'
+  highlight: '#v-agentic .steps'
+  hold: 1.5
+- say: Before answering, the grounding check confirmed every claim is supported by what it retrieved.
+  caption: Grounding check
+  highlight: '#v-agentic .step:last-child, #v-agentic .answer'
+  hold: 1.5
+- say: '{text:#compare|before:Was the answer|max:220}'
+  caption: Agency costs calls
+  highlight: '#compare'
+  hold: 2.0
+- say: "Second question: how many desks does the Toronto office have? The documents don't say."
+  caption: An unanswerable question
+  highlight: '#question'
+  actions: [click: {selector: '#samples > *', nth: 5}]
+- say: Run.
+  caption: Run
+  highlight: '#run'
+  actions: [click: '#run']
+  wait: {until: '#compare:not(.hidden)', caption: both strategies running…}
+- say: >-
+    Both say the documents don't give a desk count, instead of inventing one. For unanswerable
+    questions, that's the correct answer.
+  caption: Honesty is correct here
+  highlight: '#variants'
+  hold: 3.0
+outro:
+- kind: takeaways
+  items:
+  - 'Agency helps multi-hop: the agent follows the lead the first search revealed.'
+  - 'It costs more: several times the calls and latency of plain RAG.'
+  - Unanswerable questions need honesty — “the documents don't say” is a correct answer.
+  say: Takeaways. Agency helps on multi-hop questions, because the agent can follow the lead the first search revealed.
+    It costs several times the calls. And for unanswerable questions, the documents don't say, is the right answer,
+    from either strategy.
+  pause: 2.0
+  foot: 'Code: app/exercises/rag/pipelines.py'
+hub:
+  eyebrow: Exercise 6 of 12
+  toc_label: 6
+  title: Plain RAG vs Agentic RAG
+  summary: A fixed retrieve-then-answer pipeline vs an agent with search_docs and read_doc tools plus a grounding
+    check, over the same BM25-indexed handbook. Multi-hop questions show where agency wins; one-fact and unanswerable
+    ones show its cost.
+  tries:
+  - Who owns the postmortem for the April 2025 Beacon outage? Give the person's name.
+  - How many desks does the Toronto office have? (the documents don't say)
+  - Who has to approve a $12,000 expense? Name the person.
+  code: https://github.com/javiator/agentic-orchestration-play/blob/main/app/exercises/rag/pipelines.py

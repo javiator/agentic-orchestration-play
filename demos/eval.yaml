@@ -1,0 +1,118 @@
+slug: eval
+kicker: Exercise 12 of 12 · Agentic Orchestration Playground
+start: /eval/
+defaults:
+  tag: DEMO
+  wait_caption: waiting for the models…
+concept:
+- kind: title
+  title: Eval Harness
+  lead: Score single models and orchestration patterns on the same questions — quality, latency and cost.
+  chips:
+  - evaluation
+  - LLM-as-judge
+  - baselines
+  - cost vs quality
+  say: 'Exercise twelve: the eval harness. Every other exercise claims a pattern helps. This one measures it: same
+    questions, every target, with accuracy, a graded score, latency and cost side by side.'
+- kind: boxes
+  title: The problem — and when to use it
+  boxes:
+  - head: Problem
+    items:
+    - Eyeballing a few answers is how bad patterns ship
+    - Extra calls must buy measurable quality
+  - head: Use it when
+    items:
+    - Before adopting a pattern
+    - When changing models, prompts or limits
+  - head: Skip it when
+    items:
+    - Never skip it — but keep sets small and cheap to iterate
+  say: 'The problem: eyeballing a couple of answers is how bad patterns ship. A pattern that costs five times the
+    calls has to earn it. Evaluate before adopting a pattern, and every time you change a model, prompt or limit.'
+- kind: diagram
+  title: How it works
+  diagram: |-
+    dataset (questions + expected answers / rubrics)
+          │
+          ▼            for every (target, question) pair, limited concurrency
+    ┌───────────┐   ┌─────────────────────────────────────────────────────┐
+    │  TARGETS  │──▶│ run target → answer        (calls + tokens counted) │
+    │ single    │   │ exact-match check          (when `expected` given)  │
+    │ models,   │   │ LLM grader → 1–5 + reason  (rubric / reference)     │
+    │ exercises │   └─────────────────────────────────────────────────────┘
+    └───────────┘                       │
+                                        ▼
+               per-target summary: accuracy · grade · latency · cost
+  say: 'A dataset holds questions with expected answers or rubrics. Each target, a single model or a whole exercise,
+    answers every question, while calls and tokens are counted. Two scorers: an exact-match check, cheap and objective,
+    and a model grader from one to five for open-ended answers. Then a summary per target: accuracy, grade, latency
+    and cost.'
+  pause: 1.5
+steps:
+- say: >-
+    Pick a dataset: the RAG set, ten questions over the company handbook. One-fact lookups, multi-hop,
+    and unanswerable.
+  caption: 'Dataset: rag'
+  highlight: '#dataset'
+  actions: [select: ['#dataset', rag]]
+- say: >-
+    Targets: both RAG variants, and one single model on its own. The single model has no access to the
+    documents, so its honest answer is: I don't know.
+  caption: Targets
+  highlight: '#targets'
+  actions:
+  - uncheck: 'all:#targets input[type=checkbox]'
+  - check: "#targets input[value='exercise:rag:plain']"
+  - check: "#targets input[value='exercise:rag:agentic']"
+  - check: "#targets input[value='model:1']"
+- say: Run.
+  caption: Run
+  highlight: '#run'
+  actions: [click: '#run']
+  wait: '#grid-card:not(.hidden)'
+- say: >-
+    The live grid: questions down, targets across. Each cell shows an exact-match tick when the
+    question is checkable, and the grader's score from one to five.
+  caption: Live grid
+  highlight: '#grid'
+  wait: {until: '#summary-card:not(.hidden)', caption: 30 answers + 30 grades…}
+- say: Click any cell to read the answer and the grader's reason.
+  caption: Read the reasons
+  highlight: '#grid'
+  actions: [click: {selector: '#grid td.cell', nth: 4}]
+  hold: 2.0
+- say: 'The summary: accuracy, average grade, latency, calls and tokens per target, side by side.'
+  caption: The summary
+  highlight: '#summary-card'
+  hold: 2.0
+- say: >-
+    Agentic RAG scores highest, but at several times the calls of plain RAG. Whether that's worth it
+    depends on your traffic. And with ten questions, one answer moves the average by a lot, so treat
+    small gaps as noise.
+  caption: Quality vs cost
+  highlight: '#summary-table'
+  hold: 3.0
+outro:
+- kind: takeaways
+  items:
+  - 'Measure, don''t eyeball: same questions, every target, side by side.'
+  - The grader is a model with biases — read its reasons, not just its scores.
+  - 'Small sets are noisy: one question can swing the average.'
+  say: 'Takeaways. Measure, don''t eyeball. The grader is a model with its own biases, so read its reasons, not
+    just the scores. And small sets are noisy: one question can swing an average, so don''t over-read a small difference.'
+  pause: 2.0
+  foot: 'Code: app/exercises/eval/harness.py'
+hub:
+  eyebrow: Exercise 12 of 12
+  toc_label: 12
+  title: Eval Harness
+  summary: 'Runs single-model baselines and every exercise that exposes a headless entry point over a dataset, with
+    exact-match and LLM-graded scoring, latency and cost per target. Datasets: smoke, starter, rag, code and guardrails;
+    history is kept in SQLite.'
+  tries:
+  - 'rag set: both RAG variants + one single model'
+  - 'code set: Code-Executing Agent vs a single model'
+  - 'guardrails set: guarded vs unguarded — look for over-blocking, too'
+  code: https://github.com/javiator/agentic-orchestration-play/blob/main/app/exercises/eval/harness.py

@@ -1,0 +1,123 @@
+slug: overview
+kicker: Overview · Agentic Orchestration Playground
+start: /
+defaults:
+  tag: TOUR
+  wait_caption: waiting for the models…
+concept:
+- kind: title
+  title: Agentic Orchestration Playground
+  lead: Twelve runnable exercises — one orchestration pattern each, with real models and a live UI.
+  chips:
+  - 'LiteLLM: any provider via .env'
+  - FastAPI + SSE
+  - no build step
+  - mock mode
+  say: Welcome to the agentic orchestration playground. It's a set of twelve small, runnable exercises. Each one
+    shows a single orchestration pattern, the ways of combining model calls, tools and code to get better answers
+    than one prompt would give you.
+- kind: boxes
+  title: How every exercise works
+  boxes:
+  - head: You see
+    items:
+    - A page that streams each step live
+    - Side-by-side comparisons
+    - Calls, tokens, latency per run
+  - head: Under the hood
+    items:
+    - One server, one folder per exercise
+    - Models are .env data, not code
+    - 'Mock mode: explore with no keys'
+  - head: To learn
+    items:
+    - Watch the video
+    - Run the samples
+    - Read the teaching docstring
+  say: 'Every exercise is a page that streams what happens, step by step, while the models work. Most of them compare
+    two strategies side by side, and show what each one cost. Models are configured in a dot env file, so any provider
+    works without code changes. To learn a pattern: watch its video, run the samples, then read the teaching comment
+    at the top of its code.'
+- kind: diagram
+  title: 'The map: workflows, agents, and what wraps them'
+  diagram: |2-
+      WORKFLOWS  (code decides the steps)        AGENTS  (a model decides the steps)
+      ─────────────────────────────────          ─────────────────────────────────
+      5  Prompt chain    fixed steps + gates     3  Supervisor   delegates turn by turn
+      2  Router          one cheap decision      4  Planner      plans a graph, replans
+      1  Consensus       fan-out + judge         6  Agentic RAG  search as a tool
+      7  Reflection      draft → critique loop   8  Code agent   writes + runs Python
+
+      AROUND EVERY PATTERN
+      ─────────────────────────────────────────────────────────────────────────────
+      9  Human-in-the-loop   pause risky actions for approval
+      10 Guardrails          layered input/output checks
+      11 Context management  what the model gets to remember
+      12 Eval harness        measure quality, latency and cost — don't eyeball
+  pause: 1.5
+  say: 'Here''s the map. On the left are workflows, where code decides the steps: a prompt chain, a router, a fan-out
+    with a judge, and a reflection loop. On the right are agents, where a model decides what to do next: a supervisor,
+    a planner, agentic retrieval, and a code agent. At the bottom are the things that wrap around every pattern:
+    human approval, guardrails, context management, and evaluation.'
+steps:
+- say: >-
+    This is the landing page. Every exercise is a card. The server discovers them from the exercises
+    folder, so adding a new one is just adding a folder.
+  caption: The landing page
+  highlight: '#exercise-grid'
+- say: >-
+    They're ordered roughly from simple to advanced: consensus, router, supervisor and planner first,
+    then chains, retrieval, reflection and code.
+  caption: Twelve exercises
+  highlight: '.exercise-grid > *:nth-child(-n+4)'
+  hold: 1.5
+- say: >-
+    Further down: human in the loop, guardrails, context management, and the eval harness, which
+    measures all the others.
+  caption: …and the cross-cutting ones
+  highlight: '.exercise-grid > *:nth-last-child(-n+4)'
+  hold: 1.5
+- say: "Every exercise page has the same shape. At the top, how it's set up: which models play which role."
+  goto: /router/
+  caption: 'Inside an exercise: the setup'
+  highlight: '#routes'
+- say: Then an input with sample questions you can click, so you never have to invent a test case.
+  caption: Samples to click
+  highlight: '#samples'
+  actions: [click: {selector: '#samples button, #samples .chip, #samples > *', nth: 3}]
+- say: >-
+    And a run button. Results stream in live, step by step, so you can watch the pattern work instead
+    of reading about it.
+  caption: Run it — everything streams live
+  highlight: '#run'
+  actions: [click: '#run']
+  wait: '#col-routed .answer:not(:has(.spinner-note))'
+  hold: 1.0
+- say: >-
+    Here, the router decided which model should answer, with a confidence and a reason, and the
+    comparison shows what always using the strong model would have cost. Each video in this series
+    walks through one exercise like this, with real models.
+  caption: Every run shows what it cost
+  highlight: '#decision'
+  hold: 2.0
+outro:
+- kind: takeaways
+  title: How to use the playground
+  items:
+  - Prefer the simplest pattern that works — a workflow before an agent.
+  - 'Every extra call buys something: check what, with the Eval Harness.'
+  - 'Watch one video, then break the exercise: change a prompt, a model, a limit.'
+  say: 'Three ideas to carry through the series. Prefer the simplest pattern that works: a workflow before an agent.
+    Every extra model call should buy you something, and the eval harness tells you whether it did. And the best
+    way to learn is to break things: change a prompt, swap a model, lower a limit, and watch what happens.'
+  pause: 2.0
+  foot: 'Run it: ./start.sh  ·  no keys? MOCK_MODELS=true ./start.sh'
+hub:
+  eyebrow: Start here · overview
+  toc_label: ▶
+  title: The Playground in 3 Minutes
+  summary: 'Twelve small, runnable exercises — each one orchestration pattern, with real models, a live UI that
+    streams every step, and teaching comments in the code. Start here for the map: which patterns are workflows,
+    which are agents, and what wraps around all of them.'
+  code: https://github.com/javiator/agentic-orchestration-play/blob/main/README.md
+  takeaways: []

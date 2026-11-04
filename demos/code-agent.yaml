@@ -1,0 +1,132 @@
+slug: code-agent
+kicker: Exercise 8 of 12 · Agentic Orchestration Playground
+start: /code-agent/
+defaults:
+  tag: DEMO
+  wait_caption: waiting for the models…
+concept:
+- kind: title
+  title: Code-Executing Agent
+  lead: The model writes Python, runs it, reads the output or traceback — and fixes its code.
+  chips:
+  - code execution
+  - self-correction
+  - sandboxing
+  - ReAct
+  say: 'Exercise eight: the code-executing agent. Instead of guessing at numbers, the model writes Python, runs
+    it in a separate process, and reads the result. If the code fails, the traceback goes back to the model, and
+    it fixes the code.'
+- kind: boxes
+  title: The problem — and when to use it
+  boxes:
+  - head: Problem
+    items:
+    - Models are unreliable at arithmetic, counting, reading tables
+    - Plausible-looking numbers can be wrong
+  - head: Use it when
+    items:
+    - Data questions over files
+    - Exact computation, dates, counting
+  - head: Skip it when
+    items:
+    - Untrusted users without a real sandbox
+    - Questions that need judgement, not computation
+  say: 'The problem: models are bad at exact arithmetic and at reading big tables, but good at writing code that
+    does it. Use this for data and exact computation. Don''t expose it to untrusted users without a real sandbox.'
+- kind: diagram
+  title: How it works
+  diagram: |-
+    question ──▶ ┌──────────────────── loop (≤ CODE_MAX_STEPS) ───────────────────┐
+                 │ model ── run_python(code) ──▶ sandbox: fresh process          │
+                 │   ▲                              │                             │
+                 │   └── exit code + stdout/stderr ─┘  error? the model reads    │
+                 │                                     the traceback and fixes   │
+                 │ model ── text answer ──▶ done                                 │
+                 └───────────────────────────────────────────────────────────────┘
+  say: 'It''s a reason-act loop with one tool: run python. Each run is a fresh process with a timeout and a memory
+    cap. The exit code, output and errors go back to the model. An error is real feedback from the world, not an
+    opinion: the traceback says exactly what''s wrong. Guards: a step budget, and a block on re-running identical
+    code.'
+  pause: 1.5
+steps:
+- say: >-
+    The agent has one file, sales.csv, with monthly units and prices by region and product. Too many
+    rows to do in your head.
+  caption: The data
+  highlight: '#setup, #files'
+- say: >-
+    The question: which region had the highest revenue growth from 2024 to 2025, and by what
+    percentage?
+  caption: The question
+  highlight: '#question'
+  actions: [click: '#samples > *']
+- say: Run.
+  caption: Run
+  highlight: '#run'
+  actions: [click: '#run']
+  wait: {until: '#timeline .card', caption: model writing code…}
+- say: >-
+    Step one: the model wrote Python, and the sandbox ran it in a fresh process. Here is the code, and
+    below it, the real output.
+  caption: Write, then run
+  highlight: '#timeline .card:first-of-type'
+  wait: {until: '#final-card:not(.hidden)', caption: running code…}
+  hold: 1.5
+- &traceback
+  say: >-
+    {if:js:document.querySelectorAll('#timeline .out.err').length}A run failed here. The traceback went
+    back to the model as-is, and the next step fixed the code. That's real feedback from the world, not
+    an opinion.{else}Every run succeeded this time. When one fails, the traceback goes straight back to
+    the model, and it fixes the code.{end}
+  caption: Traceback → fix
+  highlight: '#timeline .out.err, #timeline .card'
+  hold: 2.0
+- say: 'The answer, with exact numbers: {text:#final-body|max:200}'
+  caption: Computed, not guessed
+  highlight: '#final-card'
+  hold: 2.5
+- say: >-
+    A second question: did the East region sell more or fewer units in 2025, and how did its revenue
+    change?
+  caption: Another question
+  highlight: '#question'
+  actions: [click: {selector: '#samples > *', nth: 1}]
+- say: Run.
+  caption: Run
+  highlight: '#run'
+  actions: [click: '#run']
+  wait: {until: '#final-card:not(.hidden)', caption: 'write, run, read…'}
+- *traceback
+- say: '{text:#final-body|max:220}'
+  caption: Exact answer
+  highlight: '#final-card'
+  hold: 2.5
+- say: >-
+    Remember this runs model-written code on this machine. The sandbox limits time and memory, but it
+    is not real isolation. Read sandbox dot py before exposing anything like this.
+  caption: Sandbox caveat
+  highlight: '#final-card'
+  hold: 1.5
+outro:
+- kind: takeaways
+  items:
+  - 'Compute, don''t guess: running code turns plausible into exact.'
+  - Tracebacks are real feedback — far more useful than self-critique.
+  - 'This sandbox is a demo: real deployments need containers or VMs.'
+  say: 'Takeaways. Compute, don''t guess. Tracebacks are real feedback from the world, much more useful than a model
+    critiquing itself. And this sandbox is for learning: a real deployment needs proper isolation, like containers
+    or virtual machines.'
+  pause: 2.0
+  foot: 'Code: app/exercises/code_agent/agent.py'
+hub:
+  eyebrow: Exercise 8 of 12
+  toc_label: 8
+  title: Code-Executing Agent
+  summary: A ReAct loop whose only tool runs model-written Python in a fresh, time- and memory-limited process with
+    sales.csv available. Failed runs show the traceback-to-fix cycle; answers are computed, not guessed. See sandbox.py
+    for what the sandbox does — and doesn't — protect.
+  tries:
+  - Which region had the highest revenue growth from 2024 to 2025, and by what percentage?
+  - How many prime numbers are there below 100,000?
+  - Ask the same data question to a single model in the Eval Harness — compare
+  code: https://github.com/javiator/agentic-orchestration-play/blob/main/app/exercises/code_agent/agent.py

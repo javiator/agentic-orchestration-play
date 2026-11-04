@@ -1,0 +1,140 @@
+slug: hitl
+kicker: Exercise 9 of 12 · Agentic Orchestration Playground
+start: /hitl/
+defaults:
+  tag: DEMO
+  wait_caption: waiting for the models…
+concept:
+- kind: title
+  title: Human-in-the-Loop
+  lead: The agent works on its own — until an action is risky. Then it pauses for you.
+  chips:
+  - approvals
+  - risk tiers
+  - interrupt & resume
+  - feedback
+  say: 'Exercise nine: human in the loop. A support agent works on a fake shop with real tools: look up customers
+    and orders, add notes, issue refunds, send emails. It acts on its own, until an action is risky. Then it pauses
+    and asks you.'
+- kind: boxes
+  title: The problem — and when to use it
+  boxes:
+  - head: Problem
+    items:
+    - Full autonomy is dangerous for irreversible actions
+    - Approving everything makes humans the bottleneck
+  - head: Use it when
+    items:
+    - Money, external messages, deletions
+    - Policies that need human judgement
+  - head: Skip it when
+    items:
+    - Every action is cheap to undo
+    - Nobody is around to answer in time
+  say: 'The problem: full autonomy is fine for actions that are cheap to undo, and dangerous for ones that aren''t:
+    money, messages, deletions. But approving everything makes the human the bottleneck. The answer is to gate by
+    risk.'
+- kind: diagram
+  title: How it works
+  diagram: |-
+    request ──▶ agent loop (tools over a fake shop)
+                  │ tool call
+                  ▼
+            POLICY CHECK (code, see world.needs_approval)
+              ├─ read / internal write / small refund ──▶ run it now
+              └─ big refund / external email ──▶ PAUSE ⏸
+                       │  the run's state (the conversation so far + the
+                       │  proposed action) is held while a human decides:
+                       ├─ approve           → run as proposed
+                       ├─ edit + approve    → run with the human's arguments
+                       └─ reject + feedback → NOT run; the agent is told why
+                       ▼
+                 loop continues ──▶ final summary for the operator
+  say: Every tool call passes a policy check in code. Reads, internal notes and small refunds run right away. Big
+    refunds and external emails pause the run. The human can approve, edit the arguments and approve, or reject
+    with feedback. Feedback goes back into the conversation, so the agent adapts instead of retrying the same thing.
+  pause: 1.5
+steps:
+- say: >-
+    The risk tiers. Reads and notes run automatically. Refunds over fifty dollars and any external
+    email pause for approval.
+  caption: Risk tiers
+  highlight: '#tiers'
+  hold: 1.0
+- say: 'And the fake shop the agent works on: customers, orders, and an outbox.'
+  caption: The shop
+  highlight: '#world'
+- say: 'Sample one: a customer''s standing desk arrived damaged, and she wants a refund.'
+  caption: The request
+  highlight: '#request'
+  actions: [click: '#samples > *']
+- say: Run.
+  caption: Run
+  highlight: '#run'
+  actions: [click: '#run']
+  wait: {until: .approval, caption: agent looking things up…}
+- say: >-
+    The lookups ran on their own. Now the agent wants to refund four hundred and twenty dollars: over
+    the limit, so it paused. The run's whole state is held while we decide.
+  caption: Paused for approval
+  highlight: .approval
+  hold: 1.0
+- say: 'The refund follows the policy, so: approve.'
+  caption: Approve the refund
+  highlight: .approval button.approve
+  actions: [click: last:.approval button.approve]
+  wait: &pending
+    until: "js:!!document.querySelector('.approval button.approve:not([disabled])') ||
+      !document.getElementById('final-card').classList.contains('hidden')"
+    caption: agent continuing…
+- say: 'The shop table updated: the order is refunded. Next, the agent drafted an email to the customer.'
+  caption: The shop updates
+  highlight: '#world tr.changed'
+  hold: 1.0
+- say: >-
+    Let's reject this draft, with feedback: warmer, shorter, and mention the five to seven day refund
+    time.
+  caption: Reject with feedback
+  highlight: last:.approval
+  actions:
+  - fill: [last:.approval .feedback, "Warmer and shorter, and mention the 5-7 day refund time."]
+  - click: last:.approval button.reject
+  wait: {<<: *pending, caption: agent revising the email…}
+- say: >-
+    {if:js:document.querySelector('.approval button.approve:not([disabled])')}The rejected email was not
+    sent. The feedback went into the conversation, and the agent wrote a new draft. Approve.{else}The
+    rejected email was not sent, and the feedback went back into the conversation.{end}
+  caption: Revised email
+  highlight: last:.approval
+  actions: [click: {selector: 'last:.approval button.approve:not([disabled])', optional: true}]
+  wait: {until: '#final-card:not(.hidden)', caption: agent finishing…}
+- say: Only the approved email is in the outbox.
+  caption: The outbox
+  highlight: '#world .outbox'
+  hold: 1.5
+- say: 'The summary for the operator. {text:#final-card .lesson|default:|before:Try|replace: — =>, |replace:—=>, }'
+  caption: Done
+  highlight: '#final-card'
+  hold: 3.0
+outro:
+- kind: takeaways
+  items:
+  - 'Gate by risk: routine actions run, irreversible ones wait for a human.'
+  - Rejection feedback lets the agent adapt instead of retrying.
+  - Real systems checkpoint the paused state so a pause survives restarts.
+  say: 'Takeaways. Gate by risk: routine actions run, irreversible ones wait. Feedback on a rejection lets the agent
+    adapt. And real systems save the paused state as a checkpoint, so a pause can last hours and survive restarts.'
+  pause: 2.0
+  foot: 'Code: app/exercises/hitl/agent.py'
+hub:
+  eyebrow: Exercise 9 of 12
+  toc_label: 9
+  title: Human-in-the-Loop
+  summary: A support agent with tools over a fake shop; a code policy pauses risky calls (large refunds, external
+    emails) for approve / edit / reject-with-feedback. The shop table updates live, and rejected actions show how
+    feedback changes the agent's next attempt.
+  tries:
+  - 'Sample 1: approve the refund, reject the email with feedback “warmer and shorter”'
+  - Edit a refund amount before approving it
+  - Lower HITL_AUTO_APPROVE_LIMIT and see which actions start pausing
+  code: https://github.com/javiator/agentic-orchestration-play/blob/main/app/exercises/hitl/agent.py

@@ -1,0 +1,125 @@
+slug: context
+kicker: Exercise 11 of 12 · Agentic Orchestration Playground
+start: /context/
+defaults:
+  tag: DEMO
+  wait_caption: waiting for the models…
+concept:
+- kind: title
+  title: Context Management
+  lead: One long conversation replayed four ways — then quizzed on what each strategy still remembers.
+  chips:
+  - memory
+  - summarization
+  - context window
+  - token cost
+  say: 'Exercise eleven: context management. A model only remembers what you send it. This exercise replays the
+    same long trip-planning conversation four ways, then quizzes each one on facts from early, middle and late in
+    the chat.'
+- kind: boxes
+  title: The problem — and when to use it
+  boxes:
+  - head: Problem
+    items:
+    - Conversations outgrow what's cheap — or possible — to send
+    - Dropping history silently loses facts
+  - head: Use it when
+    items:
+    - Long chats, assistants, agents with many steps
+    - Facts that change over time
+  - head: Skip it when
+    items:
+    - Short conversations — just send everything
+  say: 'The problem: conversations grow, and sending all of it every turn gets expensive, and eventually impossible.
+    But dropping history silently loses facts. For short chats, just send everything.'
+- kind: diagram
+  title: How it works
+  diagram: |-
+    FULL HISTORY   send everything.            Best recall; cost grows every
+                                               turn, and long contexts dilute attention.
+    SLIDING WINDOW send the last N messages.   Cheap and flat; forgets anything
+                                               older than the window, completely.
+    SUMMARY        every K messages, a model   Middle ground; summaries keep the
+                   call folds older messages   gist but drop specifics (numbers,
+                   into a running summary;     names) unless told to keep them.
+                   keep the last few raw.
+    NOTES          every K messages, a model   Precise on facts it decided to keep
+                   call updates a list of      (and can overwrite changed ones);
+                   durable facts; keep the     misses details nobody flagged as
+                   last few raw.               important. The idea behind "memory" features.
+  say: 'Four strategies. Full history sends everything: best recall, but the cost grows every turn. A sliding window
+    sends only the last few messages: cheap and flat, but it forgets everything older. A running summary folds old
+    messages into a summary: it keeps the gist, and drops details. Notes keep a list of durable facts, and can overwrite
+    one that changes.'
+  pause: 1.5
+steps:
+- say: >-
+    The script: a long conversation planning a trip to Japan. Amber tags mark facts that will be
+    quizzed later, including one that changes: the budget.
+  caption: The conversation
+  highlight: '#script'
+  hold: 1.0
+- say: Run it. The same conversation is replayed four ways.
+  caption: Run
+  highlight: '#run'
+  actions: [click: '#run']
+  wait: '#results:not(.hidden)'
+- say: >-
+    The quiz grid: one row per question, one column per strategy. Ticks fill in as answers are
+    checked.
+  caption: The quiz grid
+  highlight: '#grid'
+  wait: {until: '#lesson:not(.hidden)', caption: four strategies replaying…}
+- say: >-
+    Scores: full history {text:#score-full}, window {text:#score-window}, summary
+    {text:#score-summary}, notes {text:#score-notes}. The window forgot everything older than its last
+    few messages.
+  caption: Who remembered what
+  highlight: '#grid tr.total'
+  hold: 2.0
+- say: >-
+    The token chart. Full history grows every turn. The window stays flat. Summary and notes
+    saw-tooth: they grow, then compact.
+  caption: Cost per turn
+  highlight: '#chart-card'
+  hold: 2.5
+- say: >-
+    Click a cell to see the actual answer. Here's a question the sliding window missed: the fact was
+    planted early, so it had already scrolled out of the window.
+  caption: Why the window missed
+  highlight: '#answer-box'
+  actions: [click: "#grid td.cell[data-key^='window|'] .badge.bad"]
+  hold: 2.0
+- say: >-
+    {js:(() => { const el = document.querySelector('#states .state:last-child pre');
+    const notes = el ? el.innerText.replace(/\s+/g, ' ') : '';
+    const facts = notes.split('- ').length - 1;
+    const budget = /3,?800/.test(notes) ? 'and the changed budget was overwritten, not appended.'
+    : 'but check whether it kept the updated budget.';
+    return 'At the bottom, what the summary and notes actually kept. The summary is prose: it keeps the gist. '
+    + `The notes are a list of ${facts} specific facts, ${budget} This is the idea behind memory features in assistants.`; })()}
+  caption: Summary vs notes
+  highlight: '#state-card'
+  hold: 3.0
+outro:
+- kind: takeaways
+  items:
+  - Full history = best recall, at a cost that grows every turn.
+  - A window forgets everything outside it — completely.
+  - Notes keep specific facts, and can update a fact that changed.
+  say: Takeaways. Full history has the best recall, at a cost that keeps growing. A sliding window forgets everything
+    outside it, completely. Summaries keep the gist, and notes keep the specific facts, including ones that changed.
+  pause: 2.0
+  foot: 'Code: app/exercises/context/orchestrator.py'
+hub:
+  eyebrow: Exercise 11 of 12
+  toc_label: 11
+  title: Context Management
+  summary: The same scripted conversation (with a fact that changes mid-way) replayed with full history, a sliding
+    window, a running summary and fact notes; probe questions score recall per strategy, and a chart shows tokens
+    per turn.
+  tries:
+  - Run it once and read the quiz grid row by row
+  - 'Set CONTEXT_WINDOW_MESSAGES=12: how much does the window recover?'
+  - 'Compare the summary and notes contents at the bottom: what did each keep?'
+  code: https://github.com/javiator/agentic-orchestration-play/blob/main/app/exercises/context/orchestrator.py

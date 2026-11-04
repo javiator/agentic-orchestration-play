@@ -1,0 +1,160 @@
+slug: consensus
+kicker: Exercise 1 of 12 · Agentic Orchestration Playground
+start: /consensus/
+defaults:
+  tag: DEMO
+  wait_caption: waiting for the models…
+concept:
+- kind: title
+  title: Multi-Model Research Consensus
+  lead: One question → several models answer independently → a judge merges them and flags disagreements.
+  chips:
+  - fan-out
+  - LLM judge
+  - ReAct tools
+  - rebuttal
+  - memory
+  say: 'Exercise one: multi-model consensus. One question goes to several different models at the same time. Each
+    answers on its own, and a separate judge model merges the answers and, more importantly, points out where they
+    disagree.'
+- kind: boxes
+  title: The problem — and when to use it
+  boxes:
+  - head: Problem
+    items:
+    - One model can be confidently wrong
+    - You can't see its blind spots from one answer
+  - head: Use it when
+    items:
+    - High-stakes research questions
+    - Facts that are contested or fast-moving
+    - You want to know how sure to be
+  - head: Skip it when
+    items:
+    - Simple lookups
+    - Latency or cost matters more than confidence
+  say: 'The problem: a single model can be confidently wrong, and one answer gives you no way to tell. Use consensus
+    for high-stakes or contested questions, where knowing how sure to be is worth paying for three answers plus
+    a judge. Skip it for simple lookups.'
+- kind: diagram
+  title: How it works
+  diagram: |2-
+                  ┌──▶ agent 1 (model A) ──┐
+       question ──┼──▶ agent 2 (model B) ──┼──▶ JUDGE (its own model) ──▶ merged answer
+                  └──▶ agent 3 (model C) ──┘            │                  + disagreements
+                     in parallel, isolated              │
+                     optional: web tools (ReAct)        ▼
+                                              disagreements found?
+                                                        │ yes (rebuttal on)
+                                                        ▼
+                              REBUTTAL: each agent sees the others' claims,
+                              defends or revises ──▶ judge again (round 2)
+
+       memory: every verdict is stored (SQLite); when on, related past
+       findings are recalled into the shared prompt — "verify before relying".
+  say: 'The question fans out to three agents in parallel. They''re isolated: same input, no peeking at each other.
+    With tools on, each one can search the web in a reason-act loop. A judge, with its own model call, merges the
+    answers and lists disagreements, naming which model claimed what. If the rebuttal round is on, every agent sees
+    the others'' claims, defends or revises, and the judge runs again.'
+  pause: 1.5
+steps:
+- say: >-
+    Here's the consensus page. Our three research agents are three different models, from two
+    providers, and the judge is a fourth model call.
+  caption: Three agents + a judge
+  highlight: '#query-card'
+- say: >-
+    We'll ask: is nuclear power safer than wind, per unit of energy? It's a question where the
+    numbers depend on the source, which makes it a good test.
+  caption: A contested question
+  highlight: '#query'
+  actions: [fill: ['#query', "Is nuclear power safer than wind per unit of energy?"]]
+- say: Turn on tools, so the agents can search the web, and the rebuttal round.
+  caption: Tools + rebuttal on
+  highlight: .toggles
+  actions: [check: '#opt-tools', check: '#opt-rebuttal']
+- say: And submit. The same message goes to all three agents at the same moment.
+  caption: Fan-out
+  highlight: '#submit'
+  actions: [click: '#submit']
+  wait: '#agents-section:not(.hidden)'
+- say: >-
+    Three panels, one per model, all running in parallel. Each agent is isolated: it can't see what
+    the others are doing.
+  caption: Parallel, isolated agents
+  highlight: '#agents-grid'
+  wait: {until: "js:document.querySelectorAll('#agents-grid .trace-entry').length >= 3", timeout: 120,
+         caption: agents are researching…}
+- say: >-
+    With tools on, each agent runs a reason, act, observe loop. These lines are its tool calls: web
+    searches and pages it fetched, streaming in as they happen.
+  caption: Tool calls stream in
+  highlight: '#agents-grid .trace'
+  hold: 1.5
+- say: >-
+    Now we wait for the slowest agent; the total time is about the slowest one, not the sum. I'll
+    fast-forward.
+  caption: Waiting for the slowest agent
+  highlight: '#agents-grid'
+  wait: "js:!document.getElementById('rebuttal-card').classList.contains('hidden') ||
+    !document.getElementById('disagreements-card').classList.contains('hidden')"
+- say: >-
+    {if:#rebuttal-card:not(.hidden)}The judge compared the three answers and found disagreements, so the
+    rebuttal round starts: each agent now sees the others' claims and either defends its position or
+    revises it.{else}The judge found no substantive disagreements this time, so no rebuttal was
+    needed.{end}
+  caption: Rebuttal round
+  highlight: '#rebuttal-card'
+  wait: {until: '#disagreements-card:not(.hidden)', caption: rebuttal + second judge round…}
+- say: >-
+    {js:(() => { const p = document.querySelector('#rebuttal-body p');
+    const n = (p ? p.innerText : '').match(/\d+/g) || [];
+    if (n.length < 2) return "Done. The judge's verdict is in.";
+    const b = +n[0], a = +n[1];
+    const head = `Done. Round one had ${b} disagreement${b === 1 ? '' : 's'}; after the rebuttal, ${a} ${a === 1 ? 'remains' : 'remain'}. `;
+    return head + (a < b ? 'The agents converged where the evidence was clear.'
+    : "The agents held their positions. When models keep disagreeing after seeing each other's evidence, that's a real open question, worth checking yourself."); })()}
+  caption: Did rebuttal shrink them?
+  highlight: '#rebuttal-card'
+  hold: 1.5
+- say: >-
+    Here's what's left. Each disagreement has a topic, and under it, which model claimed what. This is
+    the most useful part: it tells you exactly where to double-check.
+  caption: Disagreements, attributed
+  highlight: '#disagreements-card'
+  actions: [wheel: 200]
+  hold: 2.5
+- say: Panels marked revised changed their answer in the rebuttal round.
+  caption: Revised answers
+  highlight: '#agents-grid .revised-badge'
+  hold: 1.0
+- say: >-
+    And the merged answer: one synthesis, written by the judge from all the successful answers, with
+    the timing showing what parallel execution saved.
+  caption: The merged answer
+  highlight: '#merged-card'
+  hold: 3.0
+outro:
+- kind: takeaways
+  items:
+  - 'Fan-out is parallel: three models cost about the time of the slowest one.'
+  - A separate judge synthesizes — and attributes every claim to a model.
+  - 'Disagreements are signal: they show exactly where to double-check.'
+  say: 'Three takeaways. Fan-out is parallel, so three models take about as long as the slowest one. A separate
+    judge does the synthesis, and attributes each claim to a model. And disagreements aren''t noise, they''re signal:
+    they tell you exactly where to double-check.'
+  pause: 2.0
+  foot: 'Code: app/exercises/consensus/orchestrator.py'
+hub:
+  eyebrow: Exercise 1 of 12
+  toc_label: 1
+  title: Multi-Model Research Consensus
+  summary: One question fans out to several models in parallel; each answers in isolation (optionally with web-search
+    tools in a ReAct loop). A separate judge model merges the answers and lists disagreements with per-model attribution.
+    An optional rebuttal round lets agents defend or revise against each other's claims, and memory recalls findings
+    from earlier runs.
+  tries:
+  - Is nuclear power safer than wind per unit of energy? — tools + rebuttal on
+  - What will the global population peak at, and when? — compare round 1 vs round 2
+  - Ask a follow-up in the same session with memory on, and see what gets recalled
+  code: https://github.com/javiator/agentic-orchestration-play/blob/main/app/exercises/consensus/orchestrator.py

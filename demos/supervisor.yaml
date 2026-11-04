@@ -1,0 +1,125 @@
+slug: supervisor
+kicker: Exercise 3 of 12 · Agentic Orchestration Playground
+start: /supervisor/
+defaults:
+  tag: DEMO
+  wait_caption: waiting for the models…
+concept:
+- kind: title
+  title: Supervisor & Specialists
+  lead: A supervisor model decides, turn by turn, which specialist acts next — and when the job is done.
+  chips:
+  - agents as tools
+  - dynamic handoff
+  - shared scratchpad
+  - loop guards
+  say: 'Exercise three: supervisor and specialists. Instead of code deciding who does what, a supervisor model decides
+    at runtime: it delegates tasks to a researcher, an analyst and a writer, reads their results, and decides when
+    the job is done.'
+- kind: boxes
+  title: The problem — and when to use it
+  boxes:
+  - head: Problem
+    items:
+    - The steps of the job aren't known in advance
+    - Different sub-tasks need different skills
+  - head: Use it when
+    items:
+    - Open-ended goals
+    - Work that needs research, then analysis, then writing — adaptively
+  - head: Skip it when
+    items:
+    - The steps are predictable — use a workflow
+    - Tight latency or cost budgets
+  say: 'The problem: for open-ended goals you don''t know the steps in advance, and different parts need different
+    skills. If the steps are predictable, use a workflow instead. A supervisor pays a model call for every decision.'
+- kind: diagram
+  title: How it works
+  diagram: |2-
+                ┌──────────────────────────────────┐
+    goal ─────▶ │ SUPERVISOR  (a tool-calling LLM) │ ◀──────────────────┐
+                └──────┬───────────────────┬───────┘                    │
+        delegate(specialist, task)      finish(final_answer) ──▶ done   │
+                       ▼                                                 │
+                ┌──────────────┐  appends   ┌────────────┐              │
+                │  SPECIALIST  │ ─────────▶ │ SCRATCHPAD │ shared state │
+                │ (own model)  │ ◀───reads─ └────────────┘              │
+                └──────┬───────┘                                        │
+                       └── output returned as the tool result ──────────┘
+  say: 'The supervisor is a tool-calling model. Each specialist is exposed as one tool: delegate, with a specialist
+    and a task. Specialists write to a shared scratchpad that the others read. Their output returns to the supervisor
+    as the tool result, and it decides again. Several delegations in one turn run in parallel. Guards stop it spinning:
+    a turn cap, and a block on repeating the exact same delegation.'
+  pause: 1.5
+steps:
+- say: >-
+    The team: a supervisor, and three specialists on different models. A researcher with web tools,
+    an analyst, and a writer.
+  caption: The team
+  highlight: '#roster'
+  hold: 1.0
+- say: >-
+    We'll use the default goal: should a ten-person startup self-host Postgres or use a managed
+    service, with costs.
+  caption: The goal
+  highlight: '#goal'
+  actions:
+  - fill: ['#goal', "Should a 10-person startup self-host Postgres or use a managed service? Give a recommendation with costs."]
+- say: 'Run. Every block in the timeline is one supervisor turn: one decision.'
+  caption: Run
+  highlight: '#run'
+  actions: [click: '#run']
+  wait: {until: .turn .step, caption: supervisor deciding…}
+- say: >-
+    Turn one: the supervisor delegated. Each step shows which specialist got the work, on which model,
+    and the exact task. Tasks must be self-contained, because specialists never see the supervisor's
+    reasoning.
+  caption: 'Turn 1: delegation'
+  highlight: first:.turn
+  hold: 1.0
+- say: >-
+    {if:js:[...document.querySelectorAll('.turn')].some(t => t.querySelectorAll('.step').length > 1)}Notice
+    this turn has more than one step: parallel delegations, run at the same time.{else}The researcher's
+    tool calls show up inside its step, as it searches.{end}
+  caption: Parallel handoffs
+  highlight: first:.turn .steps
+  wait: {until: "js:document.querySelectorAll('.turn').length >= 2", caption: specialists working…}
+- say: Turn two. The results came back to the supervisor as tool results, and it decided what's next.
+  caption: It adapts each turn
+  highlight: last:.turn
+  wait: {until: '#final-card:not(.hidden)', caption: more turns…}
+- say: >-
+    Finished, in {plural:.turn|turn} with {plural:.turn .step|delegation}. The supervisor itself
+    called finish when it judged the work complete.
+  caption: Finish
+  highlight: '#timeline'
+  hold: 1.5
+- say: >-
+    Here's the final answer, written from everything in the shared scratchpad. If the supervisor had
+    hit the turn cap, the last turn would only have offered finish.
+  caption: The final answer
+  highlight: '#final-card'
+  hold: 3.0
+outro:
+- kind: takeaways
+  items:
+  - 'Dynamic handoff: a model decides who acts next, after seeing each result.'
+  - 'Agents as tools: the supervisor''s ReAct loop is the orchestrator.'
+  - Turn caps and repeat guards keep a confused supervisor from spinning.
+  say: 'Takeaways. Handoff is dynamic: the supervisor decides who acts next after seeing each result. Specialists
+    are just tools, so the supervisor''s own reason-act loop is the orchestrator. And guards, like a turn cap and
+    repeat blocking, keep a confused supervisor from spinning forever.'
+  pause: 2.0
+  foot: 'Code: app/exercises/supervisor/orchestrator.py'
+hub:
+  eyebrow: Exercise 3 of 12
+  toc_label: 3
+  title: Supervisor & Specialists
+  summary: A tool-calling supervisor delegates tasks to specialists (researcher, analyst, writer — each on its own
+    model) through a single delegate tool, reads their results from a shared scratchpad and decides what to do next
+    until it calls finish. Parallel delegations, a turn cap and repeat-guards are all visible in the timeline.
+  tries:
+  - Should a 10-person startup self-host Postgres or use a managed service? Give costs.
+  - Lower MAX_SUPERVISOR_TURNS to 3 and see how the final turn is forced to finish
+  - Ask for a comparison of two options and look for parallel delegations in one turn
+  code: https://github.com/javiator/agentic-orchestration-play/blob/main/app/exercises/supervisor/orchestrator.py

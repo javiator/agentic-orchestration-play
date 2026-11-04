@@ -1,0 +1,124 @@
+slug: chain
+kicker: Exercise 5 of 12 · Agentic Orchestration Playground
+start: /chain/
+defaults:
+  tag: DEMO
+  wait_caption: waiting for the models…
+concept:
+- kind: title
+  title: Prompt Chain vs Single Prompt
+  lead: 'The same strict writing task two ways: one big prompt, or small steps with code checks between them.'
+  chips:
+  - workflows
+  - code gates
+  - parallel steps
+  - structured output
+  say: 'Exercise five: prompt chain versus a single prompt. Both write a short article to a strict spec: a title,
+    exactly three sections, a word range, a takeaway line, short sentences, no buzzwords. One does it in a single
+    call. The other uses a chain of small steps with code checks in between.'
+- kind: boxes
+  title: The problem — and when to use it
+  boxes:
+  - head: Problem
+    items:
+    - One prompt with many rules → some rules get dropped
+    - You can't fix what you don't check
+  - head: Use it when
+    items:
+    - The task decomposes into known steps
+    - Output requirements can be checked by code
+  - head: Skip it when
+    items:
+    - A strong model already gets it right in one shot
+    - The steps can't be known in advance
+  say: 'The problem: one prompt with many rules tends to drop a few, and nobody notices. Chains fit when the task
+    splits into known steps, and when code can check the output. If a strong model already gets it right in one
+    shot, the chain is just extra cost.'
+- kind: diagram
+  title: How it works
+  diagram: |-
+    spec + topic ──▶ model ──▶ text                       (1 call)
+
+    topic ──▶ ① outline (JSON) ──▶ [gate: valid JSON, 3 sections?] ── no → retry once
+                    │
+                    ▼  ② write each section — in PARALLEL, one call each
+              ┌─────┼─────┐
+              ▼     ▼     ▼
+            [code: assemble title + sections + takeaway]
+                    │
+                    ▼
+             [gate: check the full spec]  ── fails → ③ targeted fix call
+                    │                              (only the failed checks)
+                    ▼
+                  text                            (~5–7 calls)
+  say: 'The chain: first an outline, as JSON, checked by code. Then each section is written in parallel, one small
+    call each. Code assembles them, then checks the full spec. Only if a check fails, one targeted fix call repairs
+    just the failed rules. This is a workflow, not an agent: code decides the steps, and code checks are free.'
+  pause: 1.5
+steps:
+- say: >-
+    The spec. Every rule here is checked by code: the title, exactly three sections, the word count,
+    the takeaway line, sentence length, and banned buzzwords.
+  caption: A strict, checkable spec
+  highlight: main section.card:first-of-type
+  hold: 1.0
+- say: 'Topic: how vaccines train the immune system.'
+  caption: The topic
+  highlight: '#topic'
+  actions: [fill: ['#topic', "How vaccines train the immune system"]]
+- say: Run both strategies side by side.
+  caption: Run
+  highlight: '#run'
+  actions: [click: '#run']
+  wait: '#results:not(.hidden)'
+- say: >-
+    Each row is one step. Blue rows are model calls, grey rows are code, and amber rows are gates:
+    code checks that decide whether to continue.
+  caption: Steps and gates
+  highlight: '#v-chain .steps'
+  wait: {until: '#verdict:not(.hidden)', caption: single prompt + chain running…}
+- say: The single prompt passed {text:#v-single .score}.
+  caption: Single prompt
+  highlight: '#v-single .checks'
+  hold: 1.5
+- say: >-
+    {if:js:/fix/i.test(document.querySelector('#v-chain .steps').innerText)}The chain needed a fix round:
+    the full-spec gate failed, and one targeted call repaired only the failed checks.{else}The chain
+    passed every gate without needing a fix round.{end}
+  caption: Fix round?
+  highlight: '#v-chain .steps'
+  hold: 1.5
+- say: 'Final score: the chain passed {text:#v-chain .score}.'
+  caption: 'Checks: chain vs single'
+  highlight: '#v-chain .checks'
+  hold: 1.5
+- say: >-
+    {text:#verdict|before:Try|max:220} Run it a few times, though: in ten test runs across the samples,
+    the single prompt missed the word count twice, and the chain passed every time. The gates turn
+    usually right into reliably right.
+  caption: Was it worth it?
+  highlight: '#verdict'
+  hold: 3.0
+outro:
+- kind: takeaways
+  items:
+  - 'When the steps are known, a workflow beats an agent: cheaper and predictable.'
+  - Code gates are free, instant and exact — check everything you can in code.
+  - 'Fix only what failed: targeted repair beats regenerating.'
+  say: 'Takeaways. When the steps are known, a workflow beats an agent: it''s predictable and cheaper. Code gates
+    are free, instant and exact, so check everything you can in code. And repair only what failed instead of regenerating
+    everything.'
+  pause: 2.0
+  foot: 'Code: app/exercises/chain/orchestrator.py'
+hub:
+  eyebrow: Exercise 5 of 12
+  toc_label: 5
+  title: Prompt Chain vs Single Prompt
+  summary: The same spec-bound writing task as one prompt vs a chain (outline JSON → parallel sections → assemble
+    → code-checked spec → targeted fix). Gate rows show every check; the result compares spec compliance, calls
+    and latency.
+  tries:
+  - How vaccines train the immune system
+  - Why interest rates affect house prices — does the single prompt pass every check?
+  - 'Swap CHAIN_MODEL to a stronger model: is the chain still worth it?'
+  code: https://github.com/javiator/agentic-orchestration-play/blob/main/app/exercises/chain/orchestrator.py

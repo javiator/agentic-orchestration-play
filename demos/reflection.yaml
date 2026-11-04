@@ -1,0 +1,127 @@
+slug: reflection
+kicker: Exercise 7 of 12 · Agentic Orchestration Playground
+start: /reflection/
+defaults:
+  tag: DEMO
+  wait_caption: waiting for the models…
+concept:
+- kind: title
+  title: Reflection Loop
+  lead: Draft, critique, revise — until it's good enough, stops improving, or runs out of budget.
+  chips:
+  - self-critique
+  - iterative refinement
+  - stop conditions
+  - diminishing returns
+  say: 'Exercise seven: the reflection loop. A writer drafts, a critic scores the draft from one to ten and lists
+    concrete issues, and the writer revises. Round after round, until it''s good enough.'
+- kind: boxes
+  title: The problem — and when to use it
+  boxes:
+  - head: Problem
+    items:
+    - First drafts miss constraints
+    - Nobody checks the output before it ships
+  - head: Use it when
+    items:
+    - Quality matters and is checkable
+    - 'Clear criteria: length, format, audience'
+  - head: Skip it when
+    items:
+    - The first draft is usually fine
+    - The critic can't judge better than the writer
+  say: 'The problem: first drafts often miss constraints, and nothing checks them. Reflection fits when quality
+    matters and the criteria are clear. If first drafts are usually fine, each round just adds cost.'
+- kind: diagram
+  title: How it works
+  diagram: |-
+    task ──▶ WRITER ──▶ draft v1
+               ▲           │
+               │           ▼
+               │        CRITIC: score 1–10 + concrete issues (JSON)
+               │           │
+               │     stop? ├─ score ≥ target          → good enough
+               │           ├─ no better than before   → plateau
+               │           └─ rounds used up          → budget
+               │           │ no
+               └── revise ◀┘  (writer gets the draft + the issues)
+
+    result = the BEST-scoring version, not necessarily the last —
+             a revision can make things worse.
+  say: 'The writer drafts version one. The critic returns a score and specific issues, as JSON. Then three stop
+    rules: the score reached the target, the score didn''t improve, or the rounds are used up. Otherwise the writer
+    revises with the issues. The result is the best scoring version, not necessarily the last, because a revision
+    can make things worse.'
+  pause: 1.5
+steps:
+- say: >-
+    The writer is the small model; the independent critic is the strong one. Target score: eight out
+    of ten, at most three rounds.
+  caption: Writer, critic, target
+  highlight: '#setup'
+- say: >-
+    The task: explain how a blockchain works to a twelve-year-old, under a hundred words, with exactly
+    one everyday analogy.
+  caption: The task
+  highlight: '#task'
+  actions: [click: '#samples > *']
+- say: Independent critic first. Run.
+  caption: Run with an independent critic
+  highlight: '#run'
+  actions: [click: '#run']
+  wait: '#scoreboard:not(.hidden)'
+- say: Each bar is a version's score. The line is the target.
+  caption: Score bars
+  highlight: '#scoreboard'
+  wait: {until: '#lesson:not(.hidden)', caption: write → critique → revise…}
+- say: >-
+    {text:#lesson|before:Every round|before:Gain per round|replace:(plateau)=>|replace: — =>, |replace:—=>, }
+    Most of the value, or the damage, shows up in the first round.
+  caption: Stop reason
+  highlight: '#lesson'
+  hold: 1.5
+- say: >-
+    {if:js:document.querySelectorAll('.toggle-diff').length}Each version shows the critic's specific
+    issues. Click show changes to see exactly what the revision changed.{else}The critic's notes are
+    right under the draft: specific and checkable, not vague.{end}
+  caption: Critique and diff
+  highlight: '#versions .version:last-child'
+  actions: [click: {selector: last:.toggle-diff, optional: true}]
+  hold: 2.5
+- say: 'Now the same task with self-critique: the writer grades its own work.'
+  caption: Self-critique
+  highlight: .modes
+  actions: [check: 'input[name=mode][value=self]']
+- say: Run.
+  caption: Run
+  highlight: '#run'
+  actions: [click: '#run']
+  wait: {until: '#lesson:not(.hidden)', caption: self-critique loop…}
+- say: >-
+    Self-critique: {text:#lesson|before:Every round|before:Gain per round|replace:(plateau)=>|replace: — =>, |replace:—=>, }
+    Compare the score with the independent critic: models tend to be generous with their own work.
+  caption: Generous grader?
+  highlight: '#scoreboard'
+  hold: 3.0
+outro:
+- kind: takeaways
+  items:
+  - Most of the gain is in round one; later rounds cost the same and add little.
+  - 'Who critiques matters: self-critique is generous, an independent critic is stricter.'
+  - Keep the best version — a revision can make things worse.
+  say: 'Takeaways. Most of the gain comes in round one. Who critiques matters: a model grading itself tends to be
+    generous, an independent critic is stricter. And keep the best version, not the last.'
+  pause: 2.0
+  foot: 'Code: app/exercises/reflection/orchestrator.py'
+hub:
+  eyebrow: Exercise 7 of 12
+  toc_label: 7
+  title: Reflection Loop
+  summary: Writer → critic (score + concrete issues as JSON) → revise, with three stop rules (good enough, plateau,
+    budget) and keep-the-best. Switch between an independent critic and self-critique to see how generous a model
+    is with its own work.
+  tries:
+  - Explain how a blockchain works to a 12-year-old in under 100 words, one analogy
+  - 'The same task with self-critique: compare the scores'
+  - Set REFLECTION_TARGET=10 and watch the plateau rule stop it
+  code: https://github.com/javiator/agentic-orchestration-play/blob/main/app/exercises/reflection/orchestrator.py

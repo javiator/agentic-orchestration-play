@@ -83,6 +83,8 @@ steps:
   - say: "Here's the mix: {text:#batch-stats|before:·}."
     caption: The traffic mix
     highlight: "#batch"
+  - say: "Every page has the same shape."
+    goto: /other/                                   # navigate before this step's narration
 
 outro:
   - {kind: takeaways, items: [.., .., ..], say: "…", pause: 2, foot: "Code: path/to/file"}

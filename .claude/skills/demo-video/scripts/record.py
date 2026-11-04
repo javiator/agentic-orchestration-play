@@ -8,6 +8,7 @@ describes what really happened on this run.
 
 Step fields (YAML):
     say        narration, templated                       (required)
+    goto       open this page first (before the narration)
     caption    short caption-bar text (≤ ~6 words)
     tag        caption-bar tag (default: the script's `label`, e.g. DEMO)
     highlight  CSS selector; "first:"/"last:" prefix picks one match.
@@ -23,12 +24,12 @@ Step fields (YAML):
     hold       seconds to linger after the step (default 0.8)
 
 Templating in `say` (evaluated when the step starts, before its actions):
-    {text:SEL}            visible text of the match (whitespace collapsed)
+    {text:SEL}            visible text of the match (whitespace collapsed; line breaks → ". ")
     {count:SEL}           number of matches
     {plural:SEL|word}     "3 words" / "1 word" from the count
     {js:EXPR}             any JS expression, as text
     {if:SEL}..{else}..{end}    SEL has a visible match (or {if:js:EXPR}); nests
-  filters for text/js:  |before:X  |after:X  |max:N  |num  |default:X  |replace:A=>B  |strip
+  filters for text/js:  |before:X  |after:X  |max:N (whole sentences)  |num  |default:X  |replace:A=>B  |strip
     e.g. "Scores: {text:#score|num}"   "{text:#savings|before:(}"
 """
 
@@ -128,8 +129,16 @@ class Demo:
         return [loc.last if which == "last" else loc.first]
 
     def text(self, sel: str, default: str = "") -> str:
+        """Visible text, whitespace collapsed; a line break after text with no
+        punctuation becomes ". " so headings and labels read as sentences."""
         found = self.locs(sel)
-        return " ".join(found[0].inner_text().split()) if found else default
+        if not found:
+            return default
+        lines = [" ".join(ln.split()) for ln in found[0].inner_text().splitlines()]
+        out = ""
+        for ln in filter(None, lines):
+            out += ("" if not out else " " if re.search(r"[.!?:;,·—–-]$", out) else ". ") + ln
+        return out
 
     def visible(self, sel: str) -> bool:
         if sel.startswith("js:"):
@@ -279,6 +288,8 @@ class Demo:
     def step(self, spec: dict, index: int = 0) -> None:
         """Caption + highlight + narration, with actions during the narration
         and an optional wait after it."""
+        if spec.get("goto"):
+            self.goto(spec["goto"])
         text = self.render_say(spec["say"])
         if self.narrator:
             wav, dur = self.narrator.say(text)
@@ -349,8 +360,12 @@ def _apply(val: str, filters: list[str]) -> str:
             val = val.split(arg)[0]
         elif name == "after":
             val = val.split(arg, 1)[1] if arg in val else val
-        elif name == "max":
-            val = val[:int(arg)]
+        elif name == "max":  # cut at the last sentence end that fits, else at a word
+            n = int(arg)
+            if len(val) > n:
+                cut = val[:n]
+                ends = [m.end() for m in re.finditer(r"[.!?](?=\s)", cut + " ")]
+                val = cut[:ends[-1]] if ends and ends[-1] > n // 3 else cut.rsplit(" ", 1)[0] + "…"
         elif name == "num":
             m = re.search(r"-?\d+(\.\d+)?", val)
             val = m.group(0) if m else (arg or "")
