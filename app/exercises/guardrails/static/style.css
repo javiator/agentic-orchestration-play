@@ -1,0 +1,11 @@
+/* Guardrails-exercise styles; shared base comes from /static/base.css. */
+.columns h2 { display: flex; align-items: center; gap: 8px; }
+.columns .stats { margin-left: auto; }
+.pipeline { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
+.guard-row { display: grid; grid-template-columns: 52px 66px 1fr auto; gap: 6px; align-items: baseline; font-size: 12.5px; }
+.guard-row .stage { color: var(--muted); font-size: 11px; text-transform: uppercase; }
+.guard-row .ms { color: var(--muted); font-size: 11px; }
+.guard-row .detail { color: var(--muted); }
+.guard-row.skipped { opacity: .45; }
+.flag { margin-bottom: 6px; }
+.answer { font-size: 14px; border-top: 1px solid var(--line); padding-top: 8px; }

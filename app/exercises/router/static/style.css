@@ -1,0 +1,16 @@
+/* Router-exercise styles; shared base comes from /static/base.css. */
+.routes { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 10px; }
+.route { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font-size: 13px; }
+.route.picked { border-color: var(--accent); background: var(--merged-bg); }
+.route .model { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: var(--accent); }
+.check { font-weight: 400; display: flex; gap: 8px; align-items: center; margin-top: 12px; font-size: 13.5px; }
+button.secondary { background: var(--card); color: var(--accent); border: 1px solid var(--accent); }
+.decision { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; }
+.conf { width: 120px; height: 8px; background: var(--line); border-radius: 4px; overflow: hidden; display: inline-block; vertical-align: middle; }
+.conf > span { display: block; height: 100%; background: var(--accent); }
+.columns h2 { display: flex; align-items: center; gap: 8px; }
+.columns .stats { margin-left: auto; }
+table.batch { width: 100%; border-collapse: collapse; font-size: 13px; }
+table.batch th, table.batch td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+table.batch td.r { white-space: nowrap; }
+@media (max-width: 640px) { table.batch td:nth-child(4), table.batch th:nth-child(4) { display: none; } }

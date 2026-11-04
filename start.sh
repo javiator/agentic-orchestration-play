@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Start the Multi-Model Research Consensus app.
+# Start the playground: one server for the landing page and every exercise.
 # Creates the venv / installs deps on first run, then launches uvicorn.
 set -euo pipefail
 cd "$(dirname "$0")"
@@ -13,8 +13,9 @@ if [ -f "$PID_FILE" ] && kill -0 "$(cat "$PID_FILE")" 2>/dev/null; then
   exit 0
 fi
 
-if [ ! -f .env ]; then
-  echo "No .env found. Copy .env.example to .env and set your models + API keys first."
+if [ ! -f .env ] && [ "${MOCK_MODELS:-}" != "true" ]; then
+  echo "No .env found. Copy .env.example to .env and set your models + API keys first,"
+  echo "or try the UIs without keys: MOCK_MODELS=true ./start.sh"
   exit 1
 fi
 
@@ -34,7 +35,7 @@ echo $! > "$PID_FILE"
 
 # Wait until the API answers so "started" actually means usable.
 for _ in $(seq 1 40); do
-  if curl -s --max-time 1 "http://localhost:$PORT/api/models" > /dev/null 2>&1; then
+  if curl -s --max-time 1 "http://localhost:$PORT/api/exercises" > /dev/null 2>&1; then
     echo "Started (pid $(cat "$PID_FILE")) — http://localhost:$PORT  (logs: $LOG_FILE)"
     exit 0
   fi

@@ -1,0 +1,11 @@
+/* Chain-exercise styles; shared base comes from /static/base.css. */
+#topic { min-height: 0; }
+.variant h2 { display: flex; align-items: center; gap: 8px; }
+.variant .stats { margin-left: auto; }
+.step-row { display: flex; gap: 8px; align-items: baseline; font-size: 13px; padding: 3px 0; }
+.step-row .kind { min-width: 44px; }
+.step-row .detail { color: var(--muted); font-size: 12px; }
+.checks { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; }
+.checks .badge { font-weight: 500; }
+.output pre { white-space: pre-wrap; }
+.score { font-size: 13px; font-weight: 600; }

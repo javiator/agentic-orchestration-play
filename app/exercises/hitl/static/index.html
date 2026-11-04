@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Human-in-the-Loop</title>
+<link rel="stylesheet" href="/static/base.css">
+<link rel="stylesheet" href="static/style.css">
+</head>
+<body>
+<header>
+  <h1>Human-in-the-Loop</h1>
+  <p class="sub">The agent acts on its own for safe actions and pauses for your decision on risky ones</p>
+</header>
+
+<main>
+  <section class="card">
+    <h2>Approval policy <span id="mock-badge" class="mock-badge hidden">mock mode</span></h2>
+    <div class="tiers" id="tiers"></div>
+    <details class="small"><summary class="muted">Shop policy the agent follows</summary><pre class="box" id="policy"></pre></details>
+  </section>
+
+  <section class="columns">
+    <div class="card">
+      <label for="request">Operator request</label>
+      <textarea id="request" rows="3" placeholder="e.g. Customer jane@example.com says order A1002 arrived damaged…"></textarea>
+      <div class="samples" id="samples"></div>
+      <div class="actions"><button id="run">Start agent</button><span class="muted small" id="setup"></span></div>
+    </div>
+    <div class="card">
+      <h2>Shop data <span class="muted small">(this run's copy)</span></h2>
+      <div id="world"></div>
+    </div>
+  </section>
+
+  <section class="hidden" id="timeline-section">
+    <h2 class="tl-head">Timeline <span class="stats" id="stats"></span></h2>
+    <div id="timeline"></div>
+  </section>
+
+  <section class="card final hidden" id="final-card">
+    <h2>Agent's summary</h2>
+    <div id="final-body" class="markdown"></div>
+    <p class="lesson small" id="lesson"></p>
+  </section>
+  <section class="card error hidden" id="error-card"></section>
+</main>
+
+<script src="/static/nav.js"></script>
+<script src="/static/util.js"></script>
+<script src="static/app.js"></script>
+</body>
+</html>

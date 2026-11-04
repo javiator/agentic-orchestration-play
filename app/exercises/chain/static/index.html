@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prompt Chain vs Single Prompt</title>
+<link rel="stylesheet" href="/static/base.css">
+<link rel="stylesheet" href="static/style.css">
+</head>
+<body>
+<header>
+  <h1>Prompt Chain vs Single Prompt</h1>
+  <p class="sub">One big prompt, or a fixed sequence of small steps with code checks in between &mdash; which meets the spec, and at what cost?</p>
+</header>
+
+<main>
+  <section class="card">
+    <h2>The spec <span id="mock-badge" class="mock-badge hidden">mock mode</span></h2>
+    <pre class="box" id="spec"></pre>
+    <p class="kv" id="setup"></p>
+  </section>
+
+  <section class="card">
+    <label for="topic">Topic for the explainer</label>
+    <textarea id="topic" rows="1" placeholder="e.g. How vaccines train the immune system"></textarea>
+    <div class="samples" id="samples"></div>
+    <div class="actions"><button id="run">Run both</button></div>
+  </section>
+
+  <section class="columns hidden" id="results">
+    <div class="card variant" id="v-single">
+      <h2><span class="status-dot"></span>Single prompt <span class="stats"></span></h2>
+      <div class="steps"></div><div class="checks"></div><div class="output"></div>
+    </div>
+    <div class="card variant" id="v-chain">
+      <h2><span class="status-dot"></span>Prompt chain <span class="stats"></span></h2>
+      <div class="steps"></div><div class="checks"></div><div class="output"></div>
+    </div>
+  </section>
+  <section class="card lesson hidden" id="verdict"></section>
+  <section class="card error hidden" id="error-card"></section>
+</main>
+
+<script src="/static/nav.js"></script>
+<script src="/static/util.js"></script>
+<script src="static/app.js"></script>
+</body>
+</html>

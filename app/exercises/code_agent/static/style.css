@@ -1,0 +1,44 @@
+/* Code-agent styles; shared base comes from /static/base.css. */
+.actions { display: flex; align-items: center; gap: 14px; margin-top: 14px; flex-wrap: wrap; }
+.small { font-size: 12.5px; }
+.mock-badge {
+  font-size: 11px; font-weight: 600; border-radius: 999px; padding: 1px 8px; margin-left: 6px;
+  background: var(--warn-bg); border: 1px solid var(--warn-line); color: #92400e;
+}
+.setup { display: flex; flex-wrap: wrap; gap: 8px 20px; font-size: 13.5px; }
+.setup code { color: var(--accent); }
+.notice {
+  background: var(--warn-bg); border: 1px solid var(--warn-line); color: #92400e;
+  border-radius: 8px; padding: 8px 10px; margin: 12px 0 0;
+}
+.files { margin-top: 12px; }
+.files summary { cursor: pointer; font-weight: 600; font-size: 13.5px; color: var(--accent); }
+.samples { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.samples button {
+  background: var(--bg); color: var(--ink); border: 1px solid var(--line);
+  font-weight: 400; font-size: 12.5px; padding: 4px 10px; border-radius: 999px;
+}
+.samples button:hover { border-color: var(--accent); }
+
+.stats { font-size: 12px; font-weight: 500; color: var(--muted); margin-left: 8px; }
+.step { padding: 12px 14px; }
+.step-head { display: flex; align-items: center; gap: 8px; font-size: 13.5px; }
+.step-head .meta { margin-left: auto; color: var(--muted); font-size: 12px; }
+.note { font-style: italic; font-size: 13.5px; margin: 6px 0; color: var(--muted); }
+pre.code, pre.out {
+  margin: 8px 0 0; padding: 8px 10px; border-radius: 6px; font-size: 12.5px;
+  overflow-x: auto; white-space: pre; max-height: 320px; overflow-y: auto;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+pre.code { background: #0f172a; color: #e2e8f0; }
+pre.out { background: var(--bg); border: 1px solid var(--line); }
+pre.out.err { border-color: var(--fail); color: var(--fail); }
+.badge {
+  font-size: 11px; font-weight: 600; border-radius: 999px; padding: 1px 8px;
+  border: 1px solid var(--line);
+}
+.badge.ok { color: var(--ok); border-color: var(--ok); }
+.badge.bad { color: var(--fail); border-color: var(--fail); }
+.badge.warn { color: #92400e; background: var(--warn-bg); border-color: var(--warn-line); }
+.card.final { background: var(--merged-bg); border-color: var(--accent); }
+.byline { font-weight: 400; color: var(--muted); font-size: 13px; }

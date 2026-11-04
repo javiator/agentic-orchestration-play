@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Code-Executing Agent</title>
+<link rel="stylesheet" href="/static/base.css">
+<link rel="stylesheet" href="static/style.css">
+</head>
+<body>
+<header>
+  <h1>Code-Executing Agent</h1>
+  <p class="sub">The model writes Python, runs it, reads the output or traceback, and tries again &mdash; computed answers instead of guesses</p>
+</header>
+
+<main>
+  <section class="card">
+    <h2>Setup <span id="mock-badge" class="mock-badge hidden">mock mode</span></h2>
+    <div class="setup" id="setup"></div>
+    <p class="notice small">Runs model-written code <strong>on this machine</strong> in a separate
+      process: fresh temp directory, no API keys in its environment, time/memory limits.
+      That is not a full sandbox &mdash; it can still read your files and reach the network.
+      Use models you trust; see <code>sandbox.py</code> for real isolation options.</p>
+    <details class="files">
+      <summary id="files-summary">Data files</summary>
+      <div id="files"></div>
+    </details>
+  </section>
+
+  <section class="card">
+    <label for="question">Question</label>
+    <textarea id="question" rows="2" placeholder="e.g. Which region had the highest revenue growth from 2024 to 2025 in sales.csv?"></textarea>
+    <div class="samples" id="samples"></div>
+    <div class="actions"><button id="run">Run agent</button><span id="limits" class="muted small"></span></div>
+  </section>
+
+  <section class="hidden" id="timeline-section">
+    <h2>Steps <span id="stats" class="stats"></span></h2>
+    <div id="timeline"></div>
+  </section>
+
+  <section class="card final hidden" id="final-card">
+    <h2>Answer <span class="byline" id="final-byline"></span></h2>
+    <div id="final-body" class="markdown"></div>
+  </section>
+
+  <section class="card error hidden" id="error-card"></section>
+</main>
+
+<script src="/static/nav.js"></script>
+<script src="/static/util.js"></script>
+<script src="static/app.js"></script>
+</body>
+</html>

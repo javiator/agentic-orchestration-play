@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reflection Loop</title>
+<link rel="stylesheet" href="/static/base.css">
+<link rel="stylesheet" href="static/style.css">
+</head>
+<body>
+<header>
+  <h1>Reflection Loop</h1>
+  <p class="sub">Draft &rarr; critique &rarr; revise, until it's good enough, stops improving, or the budget runs out</p>
+</header>
+
+<main>
+  <section class="card">
+    <h2>Setup <span id="mock-badge" class="mock-badge hidden">mock mode</span></h2>
+    <div class="setup" id="setup"></div>
+  </section>
+
+  <section class="card">
+    <label for="task">Task</label>
+    <textarea id="task" rows="2" placeholder="A task with explicit constraints works best (length, count, audience…)"></textarea>
+    <div class="samples" id="samples"></div>
+    <div class="modes">
+      <label><input type="radio" name="mode" value="independent" checked> <span>Independent critic <span class="muted small" id="critic-label"></span></span></label>
+      <label><input type="radio" name="mode" value="self"> <span>Self-critique <span class="muted small">(writer grades its own work)</span></span></label>
+    </div>
+    <div class="actions"><button id="run">Run reflection</button></div>
+  </section>
+
+  <section class="card hidden" id="scoreboard">
+    <h2>Score per round <span class="stats" id="stats"></span></h2>
+    <div class="bars" id="bars"></div>
+    <p class="lesson hidden" id="lesson"></p>
+  </section>
+
+  <section id="versions"></section>
+  <section class="card error hidden" id="error-card"></section>
+</main>
+
+<script src="/static/nav.js"></script>
+<script src="/static/util.js"></script>
+<script src="static/app.js"></script>
+</body>
+</html>

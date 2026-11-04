@@ -1,0 +1,21 @@
+{
+  "name": "Smoke test (3 questions)",
+  "description": "Cheapest possible run — use it to check that every target works before a full eval.",
+  "questions": [
+    {
+      "id": "arith",
+      "question": "What is 12 + 30?",
+      "expected": "42"
+    },
+    {
+      "id": "capital-fr",
+      "question": "What is the capital of France?",
+      "expected": "Paris"
+    },
+    {
+      "id": "explain-dns",
+      "question": "In two sentences, what does DNS do?",
+      "rubric": "Translates human-readable domain names into IP addresses (resolution), via a hierarchical/distributed system of servers. Must be accurate and concise."
+    }
+  ]
+}

@@ -1,145 +1,53 @@
-"""FastAPI web layer.
+"""Root web app: a landing page plus every discovered exercise.
 
-Flow: the browser POSTs the query + context + files + feature toggles to
-/api/query (multipart), gets back a job id, then opens an SSE stream at
-/api/stream/{job_id}. The orchestrator pushes events (agent_started /
-tool_call / agent_finished / fanout_complete / memory_recalled /
-judge_started / rebuttal_started / done / error) onto a queue that this
-layer relays as SSE, so the UI can show progress while agents are running.
-
-SESSIONS (session memory): passing the session_id returned by a previous
-query makes the new query a follow-up — prior turns of that session are
-injected into the shared context for every agent. This is the conversation-
-level multi-turn layer; the tool loop inside each agent is the inner one.
+Each exercise package under app/exercises/ is mounted at /<slug>/ (its
+router) and /<slug>/static/ (its UI files). The landing page at / lists them
+via /api/exercises; the shared nav bar (static/nav.js) lets every exercise
+page switch to another one. One process, one port, one ./start.sh.
 """
 
-import asyncio
-import json
-import uuid
 from pathlib import Path
 
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi import FastAPI
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from .config import load_judge_model, load_research_models
-from .files import parse_upload
-from .orchestrator import RunOptions, run_consensus
+from .exercises import discover_exercises
 
-app = FastAPI(title="Multi-Model Research Consensus")
-
-# In-memory stores — fine for a single-user tool:
-#   _jobs:     job_id -> live event queue for the SSE relay
-#   _sessions: session_id -> [{"query", "merged_answer"}, ...] (session memory)
-_jobs: dict[str, asyncio.Queue] = {}
-_sessions: dict[str, list[dict[str, str]]] = {}
+app = FastAPI(title="Agentic Orchestration Playground")
 
 STATIC_DIR = Path(__file__).parent / "static"
+EXERCISES = discover_exercises()
+
+for ex in EXERCISES:
+    app.include_router(ex.router, prefix=f"/{ex.slug}")
+    if ex.static_dir:
+        app.mount(
+            f"/{ex.slug}/static", StaticFiles(directory=ex.static_dir), name=f"{ex.slug}-static"
+        )
 
 
 @app.get("/")
-async def index() -> FileResponse:
-    return FileResponse(STATIC_DIR / "index.html")
+async def home() -> FileResponse:
+    return FileResponse(STATIC_DIR / "home.html")
 
 
-@app.get("/api/models")
-async def models() -> dict:
-    """Let the UI render one panel per configured model before any query runs."""
+@app.get("/api/exercises")
+async def exercises() -> dict:
+    """Landing-page cards and the nav bar's exercise switcher."""
     return {
-        "models": [m.label for m in load_research_models()],
-        "judge": load_judge_model().label,
+        "exercises": [
+            {
+                "slug": ex.slug,
+                "title": ex.title,
+                "description": ex.description,
+                "tags": list(ex.tags),
+                "url": f"/{ex.slug}/",
+            }
+            for ex in EXERCISES
+        ]
     }
 
 
-@app.post("/api/query")
-async def submit_query(
-    query: str = Form(...),
-    context_text: str = Form(""),
-    files: list[UploadFile] = File(default=[]),
-    use_tools: bool = Form(False),
-    rebuttal: bool = Form(False),
-    use_memory: bool = Form(False),
-    session_id: str = Form(""),
-) -> dict:
-    if not query.strip():
-        raise HTTPException(400, "Query must not be empty")
-
-    parsed_files = []
-    for f in files:
-        if not f.filename:
-            continue
-        try:
-            parsed_files.append(parse_upload(f.filename, await f.read()))
-        except ValueError as exc:
-            raise HTTPException(400, str(exc))
-
-    research = load_research_models()
-    judge = load_judge_model()
-
-    # Resolve the session: reuse if the client sent a known id (follow-up),
-    # otherwise start a fresh one. History is copied so the running pipeline
-    # sees a stable snapshot even if another turn starts later.
-    if session_id and session_id in _sessions:
-        history = list(_sessions[session_id])
-    else:
-        session_id = uuid.uuid4().hex
-        _sessions[session_id] = []
-        history = []
-
-    options = RunOptions(
-        use_tools=use_tools, rebuttal=rebuttal, use_memory=use_memory, history=history
-    )
-
-    job_id = uuid.uuid4().hex
-    events: asyncio.Queue = asyncio.Queue()
-    _jobs[job_id] = events
-
-    async def pipeline() -> None:
-        await run_consensus(query, context_text, parsed_files, research, judge, events, options)
-
-    # Fire the pipeline in the background; the SSE endpoint drains the queue.
-    # Session history is appended by the stream relay when it sees 'done', so
-    # a follow-up asked after the answer renders always has this turn.
-    task = asyncio.create_task(pipeline())
-    task.add_done_callback(lambda t: t.exception())  # surface, don't swallow
-
-    return {
-        "job_id": job_id,
-        "session_id": session_id,
-        "turn": len(history) + 1,
-        "models": [m.label for m in research],
-        "judge": judge.label,
-        "options": {"use_tools": use_tools, "rebuttal": rebuttal, "use_memory": use_memory},
-        "attached_files": [{"name": f["name"], "chars": f["chars"]} for f in parsed_files],
-    }
-
-
-@app.get("/api/stream/{job_id}")
-async def stream(job_id: str, session_id: str = "", query: str = "") -> StreamingResponse:
-    events = _jobs.get(job_id)
-    if events is None:
-        raise HTTPException(404, "Unknown job")
-
-    async def event_source():
-        try:
-            while True:
-                event = await events.get()
-                # Record the finished turn into session memory so the next
-                # query in this session can reference it.
-                if event["type"] == "done" and session_id in _sessions and query:
-                    _sessions[session_id].append(
-                        {
-                            "query": query,
-                            "merged_answer": event["verdict"].get("merged_answer", ""),
-                        }
-                    )
-                yield f"data: {json.dumps(event)}\n\n"
-                if event["type"] in ("done", "error"):
-                    break
-        finally:
-            _jobs.pop(job_id, None)
-
-    return StreamingResponse(event_source(), media_type="text/event-stream")
-
-
+# Shared assets (base.css, nav.js, landing page) for all exercises.
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")

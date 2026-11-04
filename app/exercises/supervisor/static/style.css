@@ -1,0 +1,51 @@
+/* Supervisor-exercise styles; shared base comes from /static/base.css. */
+.actions { display: flex; align-items: center; gap: 14px; margin-top: 16px; }
+.mock-badge {
+  font-size: 11px; font-weight: 600; border-radius: 999px; padding: 1px 8px; margin-left: 6px;
+  background: var(--warn-bg); border: 1px solid var(--warn-line); color: #92400e;
+}
+
+.roster { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.member {
+  border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; font-size: 13.5px;
+}
+.member.supervisor { border-color: var(--accent); background: var(--merged-bg); }
+.member .muted { margin-top: 4px; font-size: 12.5px; }
+.model {
+  margin-left: 8px; font-size: 12px; color: var(--muted); font-weight: 400;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.stats { font-size: 12px; font-weight: 500; color: var(--muted); margin-left: 8px; }
+.turn { padding: 14px 16px; }
+.turn-head { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+.note { font-style: italic; font-size: 13.5px; margin: 6px 0 0 17px; }
+
+/* Steps delegated in the same turn run in parallel: lay them out side by side. */
+.steps {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 12px; margin-top: 10px;
+}
+.steps:empty { display: none; }
+.step {
+  border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; background: var(--bg);
+}
+.step h3 { margin: 0 0 6px; font-size: 13.5px; display: flex; align-items: center; gap: 6px; }
+.step .latency { margin-left: auto; font-weight: 400; color: var(--muted); font-size: 12px; }
+.step .task { font-size: 13px; margin-bottom: 6px; }
+.step .body { font-size: 13px; }
+.step details summary { cursor: pointer; font-weight: 600; font-size: 12.5px; color: var(--accent); }
+.step .markdown { margin-top: 6px; max-height: 260px; overflow-y: auto; }
+.step.failed { border-color: var(--fail); }
+.step.failed .body { color: var(--fail); }
+.tag {
+  display: inline-block; background: var(--card); border: 1px solid var(--line);
+  border-radius: 4px; padding: 0 6px; font-size: 11.5px; margin-right: 6px; color: var(--muted);
+}
+.guard {
+  grid-column: 1 / -1; background: var(--warn-bg); border: 1px solid var(--warn-line);
+  border-radius: 8px; padding: 6px 10px; font-size: 13px; color: #92400e;
+}
+
+.card.final { background: var(--merged-bg); border-color: var(--accent); }
+.byline { font-weight: 400; color: var(--muted); font-size: 13px; }

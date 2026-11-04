@@ -1,0 +1,62 @@
+{
+  "name": "RAG: Tidewell Labs handbook (10 questions)",
+  "description": "Questions over the RAG exercise's fictional company documents: one-fact lookups, multi-hop (facts in different documents) and unanswerable. Compare the two RAG variants; single models have no access to the documents, so the honest answer for them is 'I don't know'.",
+  "questions": [
+    {
+      "id": "kestrel",
+      "question": "At Tidewell Labs, what is Kestrel?",
+      "expected": "alerting",
+      "rubric": "Kestrel is the internal codename for Beacon's alerting engine."
+    },
+    {
+      "id": "oncall-handoff",
+      "question": "When does the Tidewell Labs Platform on-call handoff happen?",
+      "expected": "Monday",
+      "rubric": "Weekly rotation; handoff every Monday at 10:00 UTC."
+    },
+    {
+      "id": "postmortem-owner",
+      "question": "At Tidewell Labs, who owns the postmortem for the April 2025 Beacon outage? Give the person's name.",
+      "expected": "Priya Raman",
+      "rubric": "Multi-hop: the postmortem names the Head of Platform as owner; the org chart names Priya Raman as Head of Platform. Naming only the role is partially correct."
+    },
+    {
+      "id": "expense-approver",
+      "question": "At Tidewell Labs, who has to approve a $12,000 expense? Name the person.",
+      "expected": ["Tomás Ortega", "Tomas Ortega"],
+      "rubric": "Multi-hop: expenses over $10,000 need the CFO; the CFO is Tomás Ortega. Naming only 'the CFO' is partially correct."
+    },
+    {
+      "id": "tokyo-hotel",
+      "question": "At Tidewell Labs, what is the maximum nightly hotel rate for a business trip to Tokyo?",
+      "expected": "300",
+      "rubric": "Multi-hop: the travel policy caps tier-1 cities at $300/night; the expenses handbook lists Tokyo as tier-1. $220 is wrong."
+    },
+    {
+      "id": "beacon-10-seats",
+      "question": "At Tidewell Labs, what does a 10-seat Beacon Team plan cost per month after the 2025 price change?",
+      "expected": "590",
+      "rubric": "Team plan rose to $59/seat/month from 1 March 2025; 10 seats = $590/month. $490 (old price) is wrong."
+    },
+    {
+      "id": "platform-growth",
+      "question": "How many engineers is the Tidewell Labs Platform team adding in 2025, and who leads that team?",
+      "rubric": "Adds 6 engineers (from 14 to 20); led by Priya Raman, Head of Platform. Both parts needed for 5."
+    },
+    {
+      "id": "outage-fix",
+      "question": "What caused Tidewell Labs' April 2025 Beacon outage, and what was done to prevent it happening again?",
+      "rubric": "Expired TLS certificate on the EU ingestion gateway (manual renewal). Fixes: automated certificate renewal and a certificate-expiry alert in Kestrel 21 days ahead."
+    },
+    {
+      "id": "toronto-desks",
+      "question": "How many desks does the Tidewell Labs Toronto office have?",
+      "rubric": "Unanswerable from the documents: only Lisbon's desk count (120) is given. A correct answer says the documents don't state it. Claiming 120 or any number for Toronto scores 1."
+    },
+    {
+      "id": "crypto-mining",
+      "question": "What is Tidewell Labs' policy on cryptocurrency mining on company laptops?",
+      "rubric": "Unanswerable: no document covers crypto mining. A correct answer says so (it may mention related rules: only approved software, Security review). Inventing a specific policy scores 1."
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+/* Context-exercise styles; shared base comes from /static/base.css. */
+.script { max-height: 360px; overflow-y: auto; margin: 8px 0; font-size: 13px; }
+.msg { padding: 5px 8px; border-radius: 6px; margin: 4px 0; }
+.msg.user { background: var(--merged-bg); }
+.msg .who { font-size: 11px; color: var(--muted); margin-right: 6px; }
+.msg.planted { border-left: 3px solid var(--warn-line); }
+.msg .tag { font-size: 11px; }
+.table-wrap { overflow-x: auto; }
+table.grid { border-collapse: collapse; font-size: 13px; width: 100%; }
+table.grid th, table.grid td { padding: 6px 8px; border-bottom: 1px solid var(--line); text-align: left; }
+table.grid td.cell { text-align: center; cursor: pointer; }
+table.grid td.cell:hover { background: var(--bg); }
+table.grid tr.total td { font-weight: 600; border-top: 2px solid var(--line); }
+.answer-box { margin-top: 10px; }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12.5px; margin-top: 6px; }
+.legend span::before { content: ""; display: inline-block; width: 12px; height: 3px; margin-right: 5px; vertical-align: middle; background: var(--c); }
+#chart svg { width: 100%; height: auto; }
+.state pre { max-height: 260px; }
