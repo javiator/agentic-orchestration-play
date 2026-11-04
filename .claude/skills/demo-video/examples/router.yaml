@@ -1,0 +1,137 @@
+slug: router
+kicker: Exercise 2 of 12 · Agentic Orchestration Playground
+start: /router/
+defaults:
+  tag: DEMO
+  wait_caption: waiting for the models…
+concept:
+- kind: title
+  title: Router
+  lead: A cheap model reads each request and picks the path — and the price — for it.
+  chips:
+  - classification
+  - model tiers
+  - escalation
+  - cost vs quality
+  say: 'Exercise two: the router. Before answering, a small, cheap model reads the request and decides which path
+    it should take: a cheap model, a strong model, the strong model with web search, or a polite refusal.'
+- kind: boxes
+  title: The problem — and when to use it
+  boxes:
+  - head: Problem
+    items:
+    - Sending everything to the best model is simple — and pays top price for “hi”
+    - One path can't be both cheap and capable
+  - head: Use it when
+    items:
+    - 'Mixed traffic: many easy, some hard requests'
+    - Clear categories with different needs
+  - head: Skip it when
+    items:
+    - All requests are hard
+    - A misroute is very costly and hard to detect
+  say: 'The problem: sending every request to your strongest model is simple and good, but it pays top price for
+    hello. A router fits when traffic is mixed, mostly easy with some hard, and the categories need different handling.'
+- kind: diagram
+  title: How it works
+  diagram: |-
+    request ──▶ ROUTER (small model, one short call → JSON)
+                  │ route + confidence + reason
+                  ├── simple    ──▶ small model, one call        (cheap, fast)
+                  ├── reasoning ──▶ strong model, one call       (math, code, analysis)
+                  ├── research  ──▶ strong model + web tools     (fresh facts)
+                  └── decline   ──▶ canned reply, no model call  (out of scope)
+                  │
+                  └─ confidence < ROUTER_MIN_CONFIDENCE?  ESCALATE to the
+                     safer, more capable path — a wrong cheap answer usually
+                     costs more than the price difference.
+  say: 'The router makes one short call that returns JSON: a route, a confidence and a reason. Simple requests go
+    to the small model. Reasoning goes to the strong model. Research gets the strong model plus web tools. And harmful
+    requests get a canned reply, with no model call at all. If the router''s confidence is below a threshold, the
+    request escalates to the safer, more capable path.'
+  pause: 1.5
+steps:
+- say: >-
+    The four routes. Simple goes to the small model, reasoning and research go to the strong model,
+    research with web tools, and decline needs no model at all.
+  caption: Four routes
+  highlight: '#routes'
+  hold: 1.2
+- say: First, let's route all the sample questions at once, to see the traffic mix.
+  caption: Route all samples
+  highlight: '#classify'
+  actions: [click: '#classify']
+  wait: {until: "js:/tokens/.test(document.getElementById('batch-stats').textContent)",
+         caption: router classifying 8 requests…}
+- say: >-
+    Here's the mix: {js:(() => { const p = document.getElementById('batch-stats').innerText.split('·')
+    .map(s => s.trim()).filter(s => s && !s.includes('router'));
+    return p.length > 1 ? p.slice(0, -1).join(', ') + ' and ' + p[p.length - 1] : p.join(''); })()}.
+    Each row shows the route, the router's confidence, and its one-line reason.
+  caption: The traffic mix
+  highlight: '#batch'
+  hold: 2.0
+- say: "{text:#batch-lesson|before:.}. That's the whole argument for routing."
+  caption: Most traffic is easy
+  highlight: '#batch-lesson'
+  hold: 1.5
+- say: >-
+    Now one question in detail, the classic trick question: a bat and a ball cost a dollar ten, the
+    bat costs a dollar more than the ball. Compare mode is on, so it also runs on the strong model.
+  caption: One request, compared
+  highlight: '#question'
+  actions: [click: {selector: '#samples > *', nth: 3}]
+- say: Run it.
+  caption: Run
+  highlight: '#run'
+  actions: [click: '#run']
+  wait: '#decision:not(.hidden)'
+  hold: 0.3
+- say: >-
+    The router chose the {text:#decision .badge} route, with confidence
+    {text:#decision .kv|num|default:shown here}, and a one-line reason. If it ever misroutes,
+    this is where you'd see why.
+  caption: Route + confidence
+  highlight: '#decision'
+  wait: "js:!document.querySelector('#col-routed .answer .spinner-note') &&
+    !document.querySelector('#col-baseline .answer .spinner-note')"
+  hold: 1.5
+- say: >-
+    {if:js:['#col-routed', '#col-baseline'].every(s => /0\.05|5 cents|five cents/.test(document.querySelector(s).innerText))}Both
+    paths answered five cents, which is correct.{else}Compare the two answers carefully.{end}
+    On the left, the routed path; on the right, always strong.
+  caption: Same answer?
+  highlight: '#results'
+  hold: 2.0
+- say: >-
+    {text:#savings|before:(}.
+    {if:js:document.getElementById('savings').innerText.split('%')[0].includes('-')}On this request
+    routing cost more: a reasoning question needs the strong model anyway, plus the router's call. The
+    savings come from the easy majority of traffic, as long as you measure the misroutes too.{else}Over a
+    day of real traffic, those savings add up, as long as you measure the misroutes too.{end}
+  caption: The savings line
+  highlight: '#savings'
+  hold: 2.5
+outro:
+- kind: takeaways
+  items:
+  - Most traffic is easy — one small call can save many big ones.
+  - 'Escalate when unsure: a wrong cheap answer costs more than the upgrade.'
+  - Measure misroutes against “always strong” — the router is a model too.
+  say: 'Takeaways. Most traffic is easy, so one small routing call can save many big ones. Escalate when the router
+    is unsure, because a wrong cheap answer costs more than the upgrade. And measure misroutes against always using
+    the strong model: the router is a model too, and it can be wrong.'
+  pause: 2.0
+  foot: 'Code: app/exercises/router/orchestrator.py'
+hub:
+  eyebrow: Exercise 2 of 12
+  toc_label: 2
+  title: Router
+  summary: A small model classifies each request into a route — simple, reasoning, research or decline — with a
+    confidence score, and low confidence escalates to the stronger path. Compare mode runs the same question through
+    “always strong” so you can see the quality difference and the savings.
+  tries:
+  - Route all samples and look at the traffic mix
+  - 'A bat and a ball cost $1.10… — with compare on: does the cheap path get it right?'
+  - Raise ROUTER_MIN_CONFIDENCE to 0.9 and watch how often requests escalate
+  code: https://github.com/javiator/agentic-orchestration-play/blob/main/app/exercises/router/orchestrator.py
