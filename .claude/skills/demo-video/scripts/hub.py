@@ -175,7 +175,8 @@ def render(specs: list[dict], urls: dict, videos: str, title: str, intro: str, f
 {diagram}
 {code}
 </section>""")
-    return f"""<title>{e(title)}</title>
+    return f"""<meta charset="utf-8">
+<title>{e(title)}</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@700;800&family=JetBrains+Mono&family=Source+Sans+3:wght@400;600;700&display=swap">

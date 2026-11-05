@@ -6,6 +6,7 @@ tts: kokoro
 voice: am_michael
 start: /router/
 defaults: {tag: GUIDE, wait_caption: "running…"}
+length: [1, 4]
 
 concept:
 - kind: title

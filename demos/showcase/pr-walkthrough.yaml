@@ -52,18 +52,17 @@ steps:
     Under every video there are chapters, taken from the video's own timeline. Clicking one jumps
     the video straight to that part.
   caption: Clickable chapters
-  highlight: 'first:.chapters'
-  actions: [js: "document.querySelector('#router').scrollIntoView({block: 'start'})", pause: 0.3]
+  highlight: '#router .chapters'
   hold: 1.5
 - say: >-
     And a full transcript, with a time stamp on every line, so you can search a video, or skim it
     instead of watching.
   caption: Searchable transcript
-  highlight: 'first:details.transcript'
-  actions: [js: "document.querySelectorAll('details.transcript')[0].open = true", wheel: 260]
+  highlight: '#router details.transcript'
+  actions: [js: "document.querySelector('#router details.transcript').open = true"]
   hold: 2.0
   expect:
-  - visible: 'details.transcript[open] p'
+  - visible: '#router details.transcript[open] p'
 
 outro:
 - kind: code
