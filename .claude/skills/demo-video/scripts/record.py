@@ -29,7 +29,8 @@ Step fields (YAML):
                     HTTP 4xx is allowed)
 
 Templating in `say` (evaluated when the step starts, before its actions):
-    {text:SEL}            visible text of the match (whitespace collapsed; line breaks → ". ")
+    {text:SEL}            visible text of the match (whitespace collapsed; line breaks → ". ");
+                          for input/textarea/select: its current value
     {count:SEL}           number of matches
     {plural:SEL|word}     "3 words" / "1 word" from the count
     {js:EXPR}             any JS expression, as text
@@ -114,6 +115,9 @@ class Demo:
         self.page.goto(path if re.match(r"^https?://", path) else self.base + path)
         self.page.wait_for_load_state("networkidle")
         self.page.evaluate(OVERLAY_JS)
+        if os.getenv("DEMO_VIDEO_NO_CAPTION"):  # docs screenshots: highlight only, no caption bar
+            self.page.add_style_tag(content="#vid-cap { display: none !important; } body { padding-top: 0 !important; }"
+                                          " .vid-hl { animation: none !important; box-shadow: none !important; }")
         self.caption("", "")
 
     def caption(self, tag: str, text: str) -> None:
@@ -140,6 +144,8 @@ class Demo:
         found = self.locs(sel)
         if not found:
             return default
+        if found[0].evaluate("e => ['INPUT', 'TEXTAREA', 'SELECT'].includes(e.tagName)"):
+            return " ".join(found[0].input_value().split())  # form fields: their value
         lines = [" ".join(ln.split()) for ln in found[0].inner_text().splitlines()]
         out = ""
         for ln in filter(None, lines):
@@ -263,6 +269,22 @@ class Demo:
             raise RuntimeError(f"no element matches {sel}")
         return found
 
+    def element_shot(self, path: Path, pad: int = 24) -> bool:
+        """Screenshot of the highlighted element(s) with some context around it."""
+        box = self.page.evaluate("""() => { const els = [...document.querySelectorAll('.vid-hl')];
+          if (!els.length) return null; const r = els.map(e => e.getBoundingClientRect());
+          const x = Math.min(...r.map(b => b.left)), y = Math.min(...r.map(b => b.top));
+          return {x, y, w: Math.max(...r.map(b => b.right)) - x, h: Math.max(...r.map(b => b.bottom)) - y}; }""")
+        if not box or box["w"] < 4 or box["h"] < 4:
+            return False
+        x, y = max(0, box["x"] - pad), max(0, box["y"] - pad)
+        clip = {"x": x, "y": y, "width": min(W - x, box["w"] + 2 * pad), "height": min(H - y, box["h"] + 2 * pad)}
+        try:
+            self.page.screenshot(path=str(path), clip=clip)
+            return True
+        except Exception:  # noqa: BLE001 — element scrolled out mid-shot
+            return False
+
     # ── checks ───────────────────────────────────────────────────────────────
 
     def check(self, exp: dict, index: int = 0) -> bool:
@@ -383,6 +405,7 @@ class Demo:
         if self.shots:
             self.shots.mkdir(parents=True, exist_ok=True)
             self.page.screenshot(path=str(self.shots / f"step{index:02d}.png"))
+            self.element_shot(self.shots / f"step{index:02d}-el.png")
 
 
 def _tokenize(template: str) -> list[tuple[str, str]]:

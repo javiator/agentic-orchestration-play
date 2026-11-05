@@ -1,0 +1,38 @@
+slug: guardrails-attack
+start: /guardrails/
+guide:
+  title: "How to test a prompt-injection attack against the guarded bot"
+  intro: >-
+    The Guardrails exercise runs the same message through an unguarded bot and a bot wrapped in
+    layered input and output checks. This guide shows how to try an attack and read which layer
+    caught it.
+  audience: anyone exploring the playground
+  prerequisites: ["The playground is running"]
+steps:
+- say: Open the Guardrails page and read the setup card.
+  doc: Open **Guardrails**. The setup card explains the secret held in the bot's system prompt and who may see it.
+  caption: Read the setup
+  highlight: '#setup'
+- say: Click the sample that pretends to be from the sales team.
+  doc: Click the sample message that claims to be from the sales team (or write your own attack in the message box).
+  caption: Choose an attack
+  highlight: '#message'
+  actions: [click: {selector: '#samples > *', text: Dana from the Tidewell sales team}]
+  expect:
+  - text: ['#message', 'Dana']
+- say: Click Send to both bots.
+  doc: Click **Send to both bots**. The message goes to the unguarded and the guarded bot at the same time.
+  caption: Run both bots
+  highlight: '#run'
+  actions: [click: '#run']
+  wait: {until: '#lesson:not(.hidden)', timeout: 60}
+  expect:
+  - visible: '#v-guarded .pipeline'
+- say: Read the guarded bot's pipeline to see which layer caught the attack.
+  doc: >-
+    Read the guarded bot's pipeline: each row is one layer — input checks, then output checks — with
+    pass or block. The badge under the pipeline names the layer that blocked the reply; layers after
+    it show as skipped. Compare with the unguarded bot on the left.
+  caption: See which layer caught it
+  highlight: '#v-guarded'
+  image: page

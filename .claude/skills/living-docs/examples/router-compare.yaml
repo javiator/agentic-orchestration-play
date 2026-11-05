@@ -1,0 +1,43 @@
+slug: router-compare
+start: /router/
+guide:
+  title: "How to check whether routing is worth it"
+  intro: >-
+    The Router exercise sends each request to a cheap or a strong model. This guide shows how to
+    run one request through the router and through "always strong" side by side, and how to
+    read the cost comparison.
+  audience: anyone exploring the playground
+  prerequisites: ["The playground is running (./start.sh, or MOCK_MODELS=true ./start.sh without keys)"]
+steps:
+- say: Open the Router page. The Routes card lists the four routes and the model each one uses.
+  caption: Check the routes
+  highlight: '#routes'
+- say: Click a sample question, or type your own request in the Request box.
+  doc: Click one of the sample questions under **Request** (or type your own). Here we use the bat-and-ball puzzle.
+  caption: Pick a request
+  highlight: '#question'
+  actions: [click: {selector: '#samples > *', nth: 3}]
+  expect:
+  - text: ['#question', 'bat']
+- say: Leave the compare option ticked, then click Route and answer.
+  doc: Leave **Also run without a router** ticked, so the same request also goes to the strong model, then click **Route & answer**.
+  caption: Run with compare on
+  highlight: '#run'
+  actions: [click: '#run']
+  wait: {until: "js:!document.querySelector('#run').disabled && !document.querySelector('#col-routed .answer .spinner-note')", timeout: 60}
+  expect:
+  - visible: '#decision'
+- say: The router's decision shows the route it picked, its confidence, and a one-line reason.
+  doc: The **Router decided** card shows the route, the router's confidence and its reason. Low confidence escalates to a stronger route.
+  caption: Read the decision
+  highlight: '#decision'
+- say: Compare the two answers and the savings line under them.
+  doc: >-
+    Compare the **Routed** and **Always strong** answers, then read the savings line: it shows how much
+    of the tokens, cost and time routing saved on this request (negative = routing cost more). One
+    request proves little — use **Route all samples** or the Eval Harness to judge a traffic mix.
+  caption: Compare and read the savings
+  highlight: '#savings'
+  image: page
+  expect:
+  - text: ['#savings', 'saved']

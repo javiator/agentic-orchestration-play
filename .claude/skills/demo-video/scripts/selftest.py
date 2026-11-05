@@ -111,11 +111,12 @@ def e2e(out: Path) -> None:
     try:
         print("dry run")
         res = build(base, out, "--dry-run")
-        shots = sorted((out / "selftest" / "shots").glob("*.png"))
+        shots = sorted(p for p in (out / "selftest" / "shots").glob("*.png") if not p.stem.endswith("-el"))
         check(len([s for s in shots if s.name.startswith("step")]) == 5 and len(shots) == 12,
               f"5 step screenshots + 7 slide PNGs ({len(shots)} files)")
         steps = json.loads((out / "selftest" / "shots" / "steps.json").read_text())
         check(len(steps["steps"]) == 5 and len(steps["slides"]) == 7, "steps.json lists steps and slides")
+        check(sum(bool(s["element_png"]) for s in steps["steps"]) >= 3, "element screenshots of highlighted steps")
         check(any("deliberate console error" in c for c in steps["console"])
               and any("missing.json" in c for c in steps["console"]), "console error + failed request captured")
         for p in EXPECTED_PROBLEMS:

@@ -78,7 +78,9 @@ def dry_run(spec: dict, browser, base: str, out: Path, css: Path | None) -> list
         "slides": [{"png": str(p), "title": s.get("title", ""), "say": s.get("say", "")}
                    for p, s in zip(pngs, spec["concept"] + spec["outro"])],
         "steps": [{"png": str(shots / f"step{n['step']:02d}.png"), "caption": n["caption"], "text": n["text"],
-                   "step": n["step"]} for n in tl["narration"]],
+                   "step": n["step"],
+                   "element_png": str(shots / f"step{n['step']:02d}-el.png")
+                   if (shots / f"step{n['step']:02d}-el.png").exists() else None} for n in tl["narration"]],
     }, indent=1, ensure_ascii=False))
     return tl["log"]
 
