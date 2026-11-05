@@ -108,7 +108,8 @@ labels, series: [{name, values}], unit, note}`, drawn as SVG) · `image` (`image
 slide deck and needs no running app; `--audio` also writes `OUT/<slug>.m4a` (podcast).
 
 **Checks** (`expect:` on a step, run after it): `visible: SEL` · `hidden: SEL` · `js: "expr"` ·
-`text: [SEL, "regex"]` · `no_errors: true` (no console errors or failed requests so far).
+`text: [SEL, "regex"]` · `no_errors: true` or `{ignore: "regex"}` (no page/console errors,
+failed requests or HTTP 5xx so far; 4xx responses are allowed).
 Failures are problems (exit status 1). Console errors, page errors, failed requests and
 HTTP ≥ 400 are always captured into `timeline.json` (`console`) and the dry run's
 `shots/steps.json`, which also lists every step's screenshot and narration.

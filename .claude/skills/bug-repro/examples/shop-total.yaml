@@ -1,0 +1,64 @@
+# Example reproduction for examples/shop/ (serve that folder, e.g. python3 -m http.server).
+# The expect: checks describe the CORRECT behaviour, so on the buggy page they fail
+# (REPRODUCED) and on fixed/index.html (the "fix branch") they pass (NOT REPRODUCED).
+slug: shop-total
+kicker: "Bug reproduction · Tiny shop"
+start: /index.html
+defaults: {tag: REPRO, hold: 0.6}
+bug:
+  title: Clearing a quantity shows "$NaN"; an unknown discount code breaks the page
+  issue: "#42 (example)"
+  expected: An empty quantity counts as 0; an unknown code shows "Unknown code."
+  actual: The total becomes "$NaN"; Apply with an unknown code does nothing and logs a TypeError.
+  max_wait: 10
+
+concept:
+- kind: title
+  title: "Bug: \"$NaN\" total and a dead Apply button"
+  lead: Reproduced automatically from issue 42, with the steps saved as a replayable test.
+  chips: [cart, discount codes]
+  say: >-
+    This is the reproduction for issue forty-two: the cart total turns into not-a-number,
+    and an unknown discount code breaks the Apply button.
+
+steps:
+- say: The cart starts with one lamp and two notebooks.
+  caption: Starting state
+  highlight: '#cart'
+  expect:
+  - text: ['#total', '^\$30\.90$']
+- say: Clear the notebook quantity, as a customer removing an item would.
+  caption: Clear a quantity
+  highlight: '#qty-notebook'
+  actions: [fill: ['#qty-notebook', ''], press: ['#qty-notebook', 'Tab']]
+  expect:
+  - text: ['#total', '^\$\d+\.\d\d$']
+- say: "The total now reads {text:#total}."
+  caption: The total
+  highlight: '#total'
+  hold: 1.5
+- say: Now try a discount code that doesn't exist.
+  caption: Unknown discount code
+  highlight: '#code'
+  actions: [fill: ['#code', 'WELCOME5'], click: '#apply']
+  expect:
+  - text: ['#msg', 'Unknown code']
+  - no_errors: true
+- say: >-
+    {if:js:document.getElementById('msg').textContent.trim()}The page says:
+    {text:#msg}.{else}Nothing happens: no message, and the browser console shows an error.{end}
+  caption: What happened
+  highlight: '#msg'
+  hold: 2
+
+outro:
+- kind: takeaways
+  title: Reproduction
+  items:
+  - "Empty quantity → parseInt('') is NaN → total \"$NaN\""
+  - "Unknown code → reads .message of undefined → TypeError, no message"
+  - "Replay: repro.py shop-total.yaml --base <url> (exit 1 = still broken)"
+  say: >-
+    Two bugs. An empty quantity is parsed as not-a-number, and an unknown code throws a
+    type error before the message is set. Replay this script on the fix branch: it exits
+    with zero once both are fixed.

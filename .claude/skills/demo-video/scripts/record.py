@@ -24,8 +24,9 @@ Step fields (YAML):
     hold       seconds to linger after the step (default 0.8)
     expect     checks after the step; each failure is logged as a problem:
                  - visible: SEL          - hidden: SEL         - js: "expr"
-                 - text: [SEL, "regex"]  - no_errors: true  (no console errors / failed
-                                                             requests so far)
+                 - text: [SEL, "regex"]  - no_errors: true | {ignore: "regex"}
+                   (no page/console errors, failed requests or HTTP 5xx so far;
+                    HTTP 4xx is allowed)
 
 Templating in `say` (evaluated when the step starts, before its actions):
     {text:SEL}            visible text of the match (whitespace collapsed; line breaks → ". ")
@@ -277,7 +278,8 @@ class Demo:
                 sel, pattern = arg
                 ok, what = bool(re.search(pattern, self.text(sel))), f"text {sel} ~ /{pattern}/"
             elif kind == "no_errors":
-                ok, what = not self.console, f"no console errors ({'; '.join(self.console)[:200]})"
+                errs = self.errors(arg.get("ignore") if isinstance(arg, dict) else None)
+                ok, what = not errs, f"no console errors ({'; '.join(errs)[:240]})"
             else:
                 raise ValueError(f"unknown expect: {kind}")
         except Exception as exc:  # noqa: BLE001
@@ -285,6 +287,20 @@ class Demo:
         if not ok:
             self.log.append(f"expect failed (step {index}): {what}")
         return ok
+
+    def errors(self, ignore: str | None = None) -> list[str]:
+        """Captured errors that count against `no_errors`: page errors, console errors,
+        failed requests and HTTP 5xx. HTTP 4xx (and Chrome's matching "Failed to load
+        resource … 4xx" console line) are often expected (an unknown id → 404), so they
+        don't count; `ignore` is an extra regex to skip."""
+        out = []
+        for c in self.console:
+            if re.match(r"HTTP 4\d\d", c) or re.search(r"Failed to load resource.*status of 4\d\d", c):
+                continue
+            if ignore and re.search(ignore, c):
+                continue
+            out.append(c)
+        return out
 
     def watch(self) -> None:
         """Collect console errors, page errors, failed requests and HTTP errors."""
