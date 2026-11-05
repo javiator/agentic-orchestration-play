@@ -1,0 +1,45 @@
+# Walkthrough template (demo-video format). Replace every <...>; delete what you don't need.
+slug: walkthrough-<branch>
+kicker: "Pull request · <repo>"
+start: /<page that changed>/
+defaults: {tag: PR, wait_caption: "working…"}
+
+concept:
+- kind: title
+  title: <What the change does, for the user>
+  lead: <One sentence: the problem it solves.>
+  chips: [<area>, <area>]
+  say: <Two sentences: what this pull request changes and why it matters.>
+- kind: bullets
+  title: What changed
+  items: [<change 1>, <change 2>, <change 3>]
+  say: <The 3–5 changes that matter, in a reviewer's words.>
+
+steps:
+- say: <Where we are and what to look at.>
+  caption: <2–6 words>
+  highlight: '<selector of the new element>'
+- say: <Do the thing the change enables.>
+  caption: <2–6 words>
+  highlight: '<selector>'
+  actions: [click: '<selector>']
+  wait: {until: '<result selector>', caption: "<what's happening>"}
+  expect:
+  - visible: '<result selector>'
+- say: "The result: {text:<result selector>|max:160}"
+  caption: <2–6 words>
+  highlight: '<result selector>'
+  hold: 2
+
+outro:
+- kind: code
+  title: <The key code>
+  file: <path/relative/to/this/yaml>
+  lines: "<a-b>"
+  highlight: ["<added lines>"]
+  say: <What this code does and why it's written this way.>
+- kind: takeaways
+  title: How to review
+  items: [<what to check>, <risk>, <how to test locally>]
+  say: <The same, spoken.>
+  foot: "<base>..<branch> · <n> commits · +<a> −<r>"
