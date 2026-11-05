@@ -1,0 +1,86 @@
+# Example brief built from examples/sales.csv with data_brief.py (every number below came
+# from an `agg` command — see the comment above each slide). Build it (no app needed):
+#   python3 ../../demo-video/scripts/build.py sales-brief.yaml --out OUT --audio
+slug: sales-brief
+kicker: "Weekly brief · Sales 2024–2025"
+tts: kokoro
+voice: am_michael
+
+concept:
+- kind: title
+  title: "Sales grew 16% in 2025 — South led"
+  lead: Two years of monthly sales by region and product, in three minutes.
+  chips: [revenue +16%, South +34%, Pro +21%, Q4 peaks]
+  say: >-
+    Here's the sales brief for 2024 and 2025. Revenue grew sixteen percent, every region
+    and every product grew, and the South region grew fastest by far.
+
+# agg --value "units*unit_price" --by region --split "year(month)"
+- kind: stats
+  title: The headline numbers
+  stats:
+  - {value: "$760k", label: "revenue over two years"}
+  - {value: "+16.0%", label: "2025 vs 2024", good: true}
+  - {value: "East", label: "largest region ($217k)"}
+  say: >-
+    Over the two years, revenue was seven hundred and sixty thousand dollars. 2025 was
+    sixteen percent above 2024. East is still the largest region, at two hundred and
+    seventeen thousand.
+
+# agg --value "units*unit_price" --by "quarter(month)"  (÷1000)
+- kind: chart
+  title: Revenue by quarter ($k)
+  chart:
+    type: line
+    labels: [24 Q1, Q2, Q3, Q4, 25 Q1, Q2, Q3, Q4]
+    series: [{name: revenue, values: [77.8, 90.2, 81.9, 102.1, 90.6, 103.5, 94.9, 119.3]}]
+    unit: k
+    note: Every fourth quarter is the year's peak; Q3 dips both years.
+  say: >-
+    By quarter, the pattern repeats: a dip in the third quarter, then the year's peak in
+    the fourth. The last quarter of 2025 was the best in the data, at a hundred and
+    nineteen thousand.
+
+# agg --value "units*unit_price" --by region --split "year(month)" --pct-change 2024 2025 --sort desc
+- kind: chart
+  title: Revenue growth by region, 2024 → 2025
+  chart:
+    type: hbar
+    labels: [South, West, North, East]
+    series: [{name: growth, values: [34.4, 21.0, 7.8, 6.4]}]
+    unit: "%"
+    note: "Units grew 28% in the South and 19% in the West, but only 3% in East and North."
+  say: >-
+    Growth was uneven. The South grew thirty four percent and the West twenty one. North
+    and East grew less than eight percent, and their unit sales barely moved, about three
+    percent. Most of their growth came from price and mix, not volume.
+
+# agg --value "units*unit_price" --by product --split "year(month)"
+- kind: chart
+  title: Revenue by product ($)
+  chart:
+    type: bar
+    labels: [Basic, Enterprise, Pro]
+    series:
+    - {name: "2024", values: [105070, 111440, 135485]}
+    - {name: "2025", values: [119700, 124773, 163782]}
+  say: >-
+    By product, Pro is the biggest line and the fastest grower, up twenty one percent.
+    Basic grew fourteen percent and Enterprise twelve.
+
+outro:
+- kind: takeaways
+  title: What to do with this
+  items:
+  - "Find out what worked in the South (+34%) and test it in the East and North."
+  - "East and North grew on price, not volume: watch for churn."
+  - "Plan Q4 capacity: it's the peak both years, and growing."
+  say: >-
+    Three things to act on. Find out what worked in the South and try it in the East and
+    North. Watch the East and North, where growth came from price rather than volume. And
+    plan for the fourth quarter, which is the peak every year and still growing.
+  foot: "Source: examples/sales.csv (288 rows, 2024-01 → 2025-12) · numbers from data_brief.py"
+
+hub:
+  eyebrow: Sales brief
+  summary: Revenue +16% in 2025; South +34%, West +21%; East and North grew on price, not volume; Q4 peaks.

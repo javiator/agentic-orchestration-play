@@ -30,11 +30,11 @@ pre { font-family: 'DejaVu Sans Mono', monospace; color: #dbe7ff; background: #0
 .code .ln.hl { background: rgba(245,185,74,.16); box-shadow: inset 4px 0 0 #f5b94a; }
 .code .no { flex: none; width: 4.2em; text-align: right; padding-right: 1.2em; color: #4f6190; }
 .code .ln.hl .no { color: #f5b94a; }
-.stats { display: grid; grid-template-columns: repeat(var(--n), 1fr); gap: 24px; margin-top: 10px; }
-.stat { background: #16203a; border: 1px solid #2b3a63; border-radius: 18px; padding: 30px 28px; }
-.stat .v { font-size: 64px; font-weight: 800; color: #f5b94a; line-height: 1.05; }
-.stat .l { font-size: 24px; color: #c4cde3; margin-top: 12px; line-height: 1.3; }
-.stat .delta { font-size: 22px; font-weight: 700; margin-top: 14px; }
+.stats { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); gap: 28px; margin: auto 0; padding-bottom: 40px; }
+.stat { background: #16203a; border: 1px solid #2b3a63; border-radius: 22px; padding: 44px 36px; min-height: 260px; }
+.stat .v { font-size: 84px; font-weight: 800; color: #f5b94a; line-height: 1.05; letter-spacing: -.02em; }
+.stat .l { font-size: 28px; color: #c4cde3; margin-top: 18px; line-height: 1.3; }
+.stat .delta { font-size: 26px; font-weight: 700; margin-top: 16px; }
 .stat .delta.good { color: #4fd1a5; } .stat .delta.bad { color: #f07ca8; }
 .chart { flex: 1; display: flex; align-items: center; justify-content: center; }
 .image { flex: 1; display: flex; align-items: center; justify-content: center; overflow: hidden; }
