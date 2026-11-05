@@ -1,0 +1,245 @@
+# Briefing on Jev (TypeSafe AI's "System One" decision model). Every number is in
+# jev-facts.md with its source. Build (no app needed):
+#   python3 .claude/skills/demo-video/scripts/build.py demos/briefings/jev-brief.yaml --out videos/briefings --audio
+slug: jev-brief
+kicker: "AI briefing · November 2026"
+length: [4.5, 5.5]
+tts: kokoro
+voice: am_michael
+
+concept:
+- kind: title
+  title: "Jev: an AI model that decides instead of writes"
+  lead: What it is, what it can do, how the market took it, how easy it is to use, and where it's heading.
+  chips: [TypeSafe AI, "\"System One\" model", 70–500 ms decisions, launched Sept 2026]
+  say: >-
+    This is a briefing on Jev, a new kind of AI model from TypeSafe AI. Large language
+    models write answers. Jev doesn't write at all. It makes decisions, in a fraction of a
+    second. Let's see what it can do, how the market reacted, how easy it is to use, and
+    where it could go next.
+
+- kind: boxes
+  title: "The problem: agents make thousands of small decisions"
+  boxes:
+  - head: What an agent keeps asking
+    items:
+    - Which team gets this ticket?
+    - Is this tool call safe to run?
+    - Is the task done, or keep going?
+    - Cheap model or strong model?
+  - head: Asking an LLM each time
+    items:
+    - "Writes the answer word by word: seconds, not milliseconds"
+    - Pays for every output token
+    - Free text must be parsed and repaired
+    - The same question can get a different answer next run
+  say: >-
+    Here's the problem. An AI agent makes lots of small decisions. Which team gets this
+    ticket? Is this tool call safe? Is the task finished? Today we ask a language model
+    each time. It writes the answer word by word, which takes seconds. We pay for
+    every token, parse free text, and the same question can get a different answer next run.
+
+- kind: diagram
+  title: "How Jev works: state and questions in, typed answers out"
+  diagram: |2-
+     STATE      a ticket · a log · a game frame · a JSON object
+        +
+     QUESTIONS  queue?   choose 1 of 4
+                urgent?  yes / no
+                risk?    score 1–5
+        │
+        ▼   Jev: one pass, all questions in parallel
+     ANSWERS    queue  = billing
+                urgent = yes    p 0.91
+                risk   = 2      confidence high
+  say: >-
+    Jev works differently. You send it a state, such as a support ticket, a log, or a game
+    frame. You add typed questions, each with the answers it's allowed to give. Jev answers
+    every question in one pass, in parallel. What comes back is one of your allowed values,
+    with a probability and a confidence score. There's no text, so nothing to parse.
+
+- kind: boxes
+  title: "Three kinds of question"
+  boxes:
+  - head: Choice
+    items:
+    - Pick one option from a list you define
+    - Up to 255 options in one call
+    - "e.g. route to billing, tech or sales"
+  - head: Score
+    items:
+    - Place the state on a scale you define
+    - "e.g. urgency from 1 to 5"
+    - "e.g. quality of an LLM answer"
+  - head: Yes / no
+    items:
+    - A probability from 0 to 1
+    - You choose the threshold
+    - "e.g. does this need human approval?"
+  foot: "Trained with Reinforcement Learning for Calibrated Decisions (RLCD): a 70% answer should be right about 7 times in 10."
+  say: >-
+    There are three kinds of question. A choice picks one option from a list, with up to
+    two hundred and fifty five options. A score places the state on a scale you define,
+    like urgency from one to five. And a yes or no question returns a probability, and you
+    choose the threshold. The model is trained to be calibrated: seventy percent should mean
+    right about seven times in ten.
+
+- kind: stats
+  title: "Built for speed and price"
+  stats:
+  - {value: "70–500", label: "milliseconds per decision"}
+  - {value: "4¢", label: "per million input tokens ($0.042)"}
+  - {value: "$0", label: "output tokens are free", good: true}
+  - {value: "64k", label: "token context (32k for the state)"}
+  say: >-
+    The numbers are built around speed and price. A decision takes between seventy and five
+    hundred milliseconds. Input costs about four cents per million tokens, and output is
+    free. The context window is around sixty four thousand tokens.
+
+- kind: chart
+  title: "Speed-up over an LLM: vendor claim vs independent tests"
+  chart:
+    type: hbar
+    labels: ["TypeSafe evals", "LangChain test", "Stagehand test"]
+    series: [{name: speed-up, values: [193.6, 5.5, 4.3]}]
+    unit: "×"
+    note: "Vendor best case vs independent tests: LangChain classification 5–6× faster than Sonnet; Stagehand browser agent decision step 1.97 s → 0.46 s."
+  say: >-
+    How much faster is it really? TypeSafe's own tests claim up to a hundred and ninety
+    times faster, and four hundred and forty times cheaper, than an LLM. Those are best case
+    numbers. Independent tests are more modest. LangChain found a classification step five
+    to six times faster than Claude Sonnet. In a browser agent, a decision step dropped from
+    two seconds to under half a second. Smaller, but in a loop that runs hundreds of times,
+    it adds up.
+
+- kind: stats
+  title: "The market: fast early adoption"
+  stats:
+  - {value: "Sept 2026", label: "early-access launch"}
+  - {value: "$40M", label: "seed round led by DCVC (reported)"}
+  - {value: "~13%", label: "of Vercel's paid teams tried it in 24 hours (reported)"}
+  - {value: "2,170", label: "public GitHub projects using it"}
+  foot: "Available on Vercel AI Gateway, Cloudflare Workers AI and Opper · LangChain guides within a week"
+  say: >-
+    The market reacted quickly. Jev launched in early access in mid September 2026,
+    reportedly backed by a forty million dollar seed round. Within a day of landing on
+    Vercel's AI Gateway, around thirteen percent of Vercel's paid teams had reportedly
+    tried it. A September study counted over two thousand public GitHub projects using it.
+    That's fast interest, but not yet proof of large production deployments.
+
+- kind: code
+  title: "How easy is it? One call, typed answer"
+  path: "Vercel AI SDK (≥ 7.0.105) · from the launch changelog"
+  code: |
+    import { experimental_evaluate as evaluate } from 'ai';
+
+    const result = await evaluate({
+      model: 'typesafe-ai/jev',
+      state: 'The support agent issued a full refund to the customer.',
+      questions: {
+        refunded: {
+          type: 'boolean',
+          instructions: 'Was a refund issued?',
+        },
+      },
+    });
+
+    console.log(result.answers.refunded);
+  highlight: [4, 5, "6-11", 14]
+  say: >-
+    Using it is simple. This is Vercel's launch example. Import one function, name the
+    model, pass the state as plain text, and describe each question with its type and a one
+    line instruction. The answer comes back already typed. No JSON to repair.
+
+- kind: bullets
+  title: "Ease of use: what's easy, and what's missing"
+  items:
+  - "Easy: no output parsing; an answer can't fall outside the values you allowed"
+  - "Easy: three gateways, plus a plain HTTP API (POST /v1/systemone)"
+  - "Easy: demos (Minecraft bot, drone, driving sim) built in under an hour"
+  - "Missing: no streaming or tool calls; one synchronous call"
+  - "Missing: text-only input; images and audio need a transcript first"
+  - "Missing: the SDK API is still marked experimental and may change"
+  say: >-
+    What's easy? An answer can't fall outside the values you allowed. It's on three gateways
+    and a plain HTTP API. The launch demos, like a Minecraft bot, were built in under an
+    hour. What's missing? No streaming, no tool calling, text input only, and the API is
+    still marked experimental.
+
+- kind: diagram
+  title: "Where it fits: code steers, Jev decides, the LLM writes"
+  diagram: |2-
+       YOUR CODE  (owns the control flow)
+           │
+           ├──▶  JEV         narrow, fast, repeated decisions
+           │                 routing · triage · guardrails · "is it done?"
+           │                 tool and model selection · quality checks
+           │
+           └──▶  LLM         only when the task needs reasoning or writing
+                             answers · summaries · code · plans
+  say: >-
+    So where does it fit? Jev doesn't replace GPT or Claude. Your code owns the control
+    flow. Jev handles the narrow, repeated decisions, like routing, guardrails, and checking
+    whether a task is done. The language model is called only for real reasoning or writing.
+
+- kind: bullets
+  title: "How well does it decide?"
+  lead: "Benchmark, 29 Sept 2026: 37 datasets, 346,009 requests, under $10 in total."
+  items:
+  - "95–99% accuracy on several classification datasets"
+  - "Strong on clear yes/no criteria; weaker on graded rubric scoring"
+  - "Weak spots: low-resource languages, fine-grained or noisy labels"
+  - "Unreliable at arithmetic and comparing dates"
+  - "Trails frontier models when reasoning across documents (e.g. invoice matching)"
+  say: >-
+    How good are the decisions? One benchmark ran over three hundred thousand requests
+    across thirty seven datasets for under ten dollars, scoring ninety five to ninety nine
+    percent on several. It's strongest on clear yes or no questions, and weaker on graded
+    rubrics, rare languages, and noisy labels. It struggles with arithmetic and dates, and
+    trails frontier models when reasoning across documents, such as matching invoices.
+
+- kind: bullets
+  title: "The risks to weigh"
+  items:
+  - "Most speed and cost numbers come from TypeSafe itself"
+  - "Real-time demos ran in simulators and games, not on real hardware"
+  - "Calibration claim not yet independently verified"
+  - "Closed commercial API: no local deployment or model ownership"
+  - "Open alternative already exists: Laya (Apache 2.0)"
+  say: >-
+    The risks. Most headline numbers come from TypeSafe itself. The real time demos ran in
+    simulators, not real hardware. Calibration isn't independently checked. It's a closed
+    API. And an open source alternative, Laya, already exists.
+
+- kind: bullets
+  title: "Future potential"
+  items:
+  - "The decision layer of every agent: cheap enough to ask on every step"
+  - "Guardrails that screen each tool call before it runs"
+  - "Model routing: send each request to a fast or a strong model"
+  - "Real-time control (games, robots, drones) once tested beyond simulators"
+  - "Cheaper decisions mean more of them: software that checks itself constantly"
+  say: >-
+    And the future? If the claims hold up, Jev could become the decision layer inside every
+    agent, cheap enough to ask on every step: screening each tool call, and routing each
+    request to a fast or a strong model. Once proven beyond simulators, it could make real
+    time choices for games, robots, and drones. And cheaper decisions mean software will
+    make more of them, checking itself all the time.
+
+outro:
+- kind: takeaways
+  title: "What to do with this"
+  items:
+  - "Try it on one narrow decision you already make with an LLM: routing or a guardrail"
+  - "Measure it on your own data, then threshold on its confidence"
+  - "Keep an LLM for reasoning and writing, and a human for irreversible actions"
+  say: >-
+    Three takeaways. Try Jev on one narrow decision you already make with an LLM, like
+    routing tickets. Measure it on your own data, and threshold on its confidence. And keep
+    a human for anything that can't be undone. Thanks for watching.
+  foot: "Sources: Vercel changelog, LangChain tests via fireup.pro, em360tech, olostep, mayhemcode, mindstudio (Sept–Oct 2026) · see jev-facts.md"
+
+hub:
+  toc_label: "★"
+  eyebrow: AI briefing
+  summary: "Jev, TypeSafe AI's decision model: typed answers in 70–500 ms, fast adoption, easy SDK, real limits, and where it could go."
