@@ -2,7 +2,7 @@
 
 Read `AGENTS.md` first for the architecture and conventions.
 
-## Where things stand (2026-10-30)
+## Where things stand (2026-11-05)
 
 - **12 exercises**, all tested end to end with **real models**:
   `scripts/smoke_test.py` → 13/13 PASS. The Eval Harness was run on the
@@ -21,8 +21,17 @@ Read `AGENTS.md` first for the architecture and conventions.
 - **Learning hub** (private claude.ai artifact, with the videos uploaded to it):
   https://claude.ai/artifact/SUThwKKxSD1rYuc57WdKYd.
   `demos/hub_videos.json` maps each slug to its uploaded file.
-- PR: javiator/agentic-orchestration-play#1, branch `claude/cool-cray-49w0rp`.
-- **Next builds:** five ideas for tools built on the video pipeline are in `IDEAS.md`.
+- PR: javiator/agentic-orchestration-play#1 (merged), branch `claude/cool-cray-49w0rp`.
+  Current work: branch `claude/zen-dijkstra-sulp2q`.
+- **Video skills** (`.claude/skills/`, all five `IDEAS.md` ideas are built):
+  - `demo-video` — the engine: YAML → narrated MP4 (Kokoro voice), slides incl.
+    code/chart/stats, `expect:` checks, console capture, dry runs, hub page,
+    self-test (`scripts/selftest.py`).
+  - `pr-walkthrough`, `bug-repro`, `briefing`, `living-docs`, `codebase-tour` —
+    thin workflow skills that write YAML for the engine (each needs `demo-video`
+    installed next to it). Read each `SKILL.md`.
+  - Showcase scripts made with them: `demos/showcase/*.yaml`; a real past bug
+    reproduced: `demos/repro/context-notes.yaml`; living guides: `docs/guides/`.
 
 ## Resume in a fresh cloud session
 
@@ -76,8 +85,11 @@ Read `AGENTS.md` first for the architecture and conventions.
 
 ## Known loose ends
 
-- The consensus video says "1 remain"; it's fixed in `demos/consensus.yaml`
-  and needs a re-record.
+- Living docs: regenerate with `python3 .claude/skills/living-docs/scripts/docs.py
+  docs/guides/src/*.yaml --base http://localhost:8001 --out docs/guides` against a
+  **mock** server (stable screenshots). No CI workflow is installed yet; the
+  templates are in each skill's `templates/`.
+
 - Videos run 2.3–3.3 min, a bit under the original 3–5 min target.
 - Demo outcomes vary between runs; the narration adapts, but some runs miss
   a teaching moment (a failing code run, a chain fix round). Re-record when

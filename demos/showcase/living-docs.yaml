@@ -1,0 +1,80 @@
+# Built with the living-docs skill: the router guide (docs/guides/src/router-compare.yaml),
+# narrated. Record against mock mode (MOCK_MODELS=true, port 8001) for stable output.
+slug: living-docs
+kicker: "Living docs · agentic-orchestration-play"
+tts: kokoro
+voice: am_michael
+start: /router/
+defaults: {tag: GUIDE, wait_caption: "running…"}
+
+concept:
+- kind: title
+  title: Docs that check themselves
+  lead: Each how-to guide is a script. Every run regenerates its screenshots — and fails if the UI drifted.
+  chips: [guides as scripts, screenshots regenerated, drift fails like a test, SSIM image diff]
+  say: >-
+    Screenshots in product docs go stale quietly. With living docs, each guide is a small script.
+    Every run replays it against the app, regenerates the screenshots, and fails like a test when a
+    button or field it relies on has changed.
+- kind: diagram
+  title: One guide, three outputs
+  diagram: |2
+     guides/router-compare.yaml ──▶ docs.py ──▶ replay against the app (headless)
+                                                    │
+                ┌───────────────────────────────────┼───────────────────────────┐
+                ▼                                   ▼                           ▼
+       router-compare.md                  img/router-compare/          exit status 1 if a
+       numbered steps + text              stepNN.png (crop around      selector, wait or
+                                          the highlighted control)     expect: check fails
+                                                    │
+                                                    ▼
+                                    router-compare.changes.md: screenshots whose
+                                    similarity (SSIM) dropped — review like a diff
+  say: >-
+    One guide produces three things: a markdown page with numbered steps, a screenshot per step
+    cropped around the control you click, and an exit status that fails the build when the guide no
+    longer matches the app. Screenshots that changed are listed for review, like a visual diff.
+  pause: 1.0
+
+steps:
+- say: Here's the guide running. Step one, check the routes card.
+  caption: "1. Check the routes"
+  highlight: '#routes'
+- say: Step two, pick a request. The guide clicks the bat-and-ball sample, and checks that it landed in the box.
+  caption: "2. Pick a request"
+  highlight: '#question'
+  actions: [click: {selector: '#samples > *', nth: 3}]
+  expect:
+  - text: ['#question', 'bat']
+- say: Step three, run it with compare on, and wait until both answers are finished.
+  caption: "3. Run with compare on"
+  highlight: '#run'
+  actions: [click: '#run']
+  wait: {until: "js:!document.querySelector('#run').disabled && !document.querySelector('#col-routed .answer .spinner-note')", timeout: 60}
+  expect:
+  - visible: '#decision'
+- say: Step four, read the decision. Each of these checks is what makes the guide fail if the page changes.
+  caption: "4. Read the decision"
+  highlight: '#decision'
+  hold: 1.5
+- say: "And step five, the savings line, which reads: {text:#savings|before:(}."
+  caption: "5. Read the savings"
+  highlight: '#savings'
+  hold: 2.0
+
+outro:
+- kind: takeaways
+  items:
+  - "A guide is a script: steps, highlights, and checks that prove each step worked."
+  - "Run it nightly: a renamed button fails the build before a user notices."
+  - "Wait for final states, so screenshots only change when the UI does."
+  say: >-
+    Three takeaways. A guide is a script, with checks that prove each step worked. Run it nightly,
+    so a renamed button fails the build before a user notices. And wait for final states, so
+    screenshots only change when the interface really does.
+  pause: 2.0
+  foot: "docs/guides/ · .claude/skills/living-docs/"
+
+hub:
+  eyebrow: "Living docs · built with living-docs"
+  summary: How-to guides that regenerate their screenshots from the app and fail like a test when the UI drifts.

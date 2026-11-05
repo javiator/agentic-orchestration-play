@@ -15,9 +15,10 @@ from pathlib import Path
 
 from common import FPS, OUT_H, OUT_W, run
 
-# Final audio: cut rumble, even out levels gently, then broadcast loudness (-16 LUFS).
+# Final audio: cut rumble, even out levels gently, broadcast loudness (-16 LUFS), then a
+# limiter so peaks stay below -1.5 dBFS after AAC encoding (single-pass loudnorm can overshoot).
 AUDIO_POLISH = ("highpass=f=70,acompressor=threshold=-21dB:ratio=2:attack=5:release=120:makeup=1,"
-                "loudnorm=I=-16:TP=-1.5:LRA=11")
+                "loudnorm=I=-16:TP=-1.5:LRA=11,alimiter=limit=0.8:attack=2:release=50:level=false")
 
 ENC_FAST = ["-c:v", "libx264", "-preset", "veryfast", "-crf", "16", "-pix_fmt", "yuv420p",
             "-c:a", "aac", "-b:a", "128k", "-ar", "48000", "-ac", "2"]

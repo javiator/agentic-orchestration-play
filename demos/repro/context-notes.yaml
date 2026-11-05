@@ -1,0 +1,65 @@
+# Real past bug, reproduced with the bug-repro skill. Fixed in ca68e24 ("Context notes:
+# keep existing notes when compacting"). Needs real models (the bug is model behaviour).
+#   bug:   python3 .claude/skills/bug-repro/scripts/repro.py demos/repro/context-notes.yaml --base <app at ca68e24^>
+#   fixed: ... --base <app at main>      (exit 1 = reproduced, 0 = not reproduced)
+slug: context-notes
+kicker: "Bug reproduction · Context management"
+tts: kokoro
+voice: am_michael
+start: /context/
+defaults: {tag: REPRO, wait_caption: "replaying the conversation four ways…"}
+bug:
+  title: Notes strategy forgets earlier facts after compaction
+  issue: "fixed in ca68e24"
+  expected: The notes strategy keeps every fact it was told (at most one quiz miss).
+  actual: With real models, compaction returned only the newest facts; notes scored 3/7, below the summary.
+  environment: real models (.env as in HANDOFF.md); not reproducible in mock mode
+  max_wait: 400
+
+concept:
+- kind: title
+  title: "Bug: the notes strategy forgets"
+  lead: A real bug from this repo's history, reproduced from its description and replayed on the fix.
+  chips: [context exercise, real models, regression check]
+  say: >-
+    This is a real bug from this repository's history. In the context exercise, the notes strategy
+    was supposed to keep durable facts about the user, but after compaction it forgot most of them.
+    Here is the automatic reproduction.
+
+steps:
+- say: The context page replays one long conversation four ways, then quizzes each strategy on facts from it.
+  caption: The context exercise
+  highlight: '#script'
+- say: Run the replay and the quiz.
+  caption: Run
+  highlight: '#run'
+  actions: [click: '#run']
+  wait: {until: '#lesson:not(.hidden)', timeout: 400}
+  expect:
+  - js: "(() => { const [s, p] = document.getElementById('score-notes').textContent.split('/').map(Number); return p > 0 && s >= p - 1; })()"
+- say: >-
+    The notes strategy scored {text:#score-notes}, against {text:#score-summary} for the summary
+    and {text:#score-full} for the full history.
+    {if:js:(() => { const [s, p] = document.getElementById('score-notes').textContent.split('/').map(Number); return s >= p - 1; })()}It
+    kept its facts: the bug is not present here.{else}It lost {js:(() => { const [s, p] = document.getElementById('score-notes').textContent.split('/').map(Number); return p - s; })()}
+    of the facts it was told: that's the bug.{end}
+  caption: The notes score
+  highlight: '#grid tr.total'
+  hold: 2.0
+- say: The kept notes show what survived compaction.
+  caption: What the notes kept
+  highlight: '#state-card'
+  hold: 2.5
+
+outro:
+- kind: takeaways
+  title: Cause and fix
+  items:
+  - "The compaction prompt said 'merge', and models returned only the new facts."
+  - "Fix: ask for the COMPLETE list, keeping every current note word for word."
+  - "This script now guards it: exit 1 if notes lose more than one fact."
+  say: >-
+    The cause: the compaction prompt asked the model to merge notes, and real models returned only
+    the newest facts. The fix asks for the complete list, keeping every note word for word. This
+    script now guards against it coming back.
+  pause: 2.0
