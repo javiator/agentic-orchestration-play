@@ -11,6 +11,12 @@ concept:
   boxes: [{head: One, items: [a, b]}, {head: Two, items: [c]}]
   say: Two boxes.
 - {kind: diagram, title: Diagram, diagram: "a ──▶ b\n└─▶ c", say: A diagram., pause: 0.5}
+- {kind: code, title: Code, file: testapp/index.html, lines: "26-34", highlight: ["28-29"], say: Some code.}
+- kind: stats
+  title: Stats
+  stats: [{value: 42, label: answers, delta: "+5%"}, {value: "3.1s", label: latency, delta: "+0.4s", good: false}]
+  say: Two numbers.
+- {kind: chart, title: Chart, chart: {type: bar, labels: [a, b, c], series: [{name: s, values: [1, 3, 2]}]}, say: A chart.}
 steps:
 - say: Pick the second sample, a size, and tick agree.
   caption: Inputs
@@ -36,6 +42,11 @@ steps:
     {plural:#samples > *|sample}, {count:.opt:checked} checked. {text:#note}
   caption: Result
   highlight: '#result'
+  expect:
+  - visible: '#result'
+  - text: ['#result', 'Score: -43%']
+  - js: "document.title.includes('nope')"
+  - no_errors: true
 - say: These two are expected to fail. {text:#nope}
   caption: Expected problems
   highlight: '#missing'

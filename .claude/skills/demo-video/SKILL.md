@@ -100,6 +100,19 @@ hub: {eyebrow: "Exercise 2 of 12", summary: "…", tries: [..], code: "https://�
 `pause: 0.5` · `js: "code"`. Selectors take `first:` (default), `last:` or `all:`
 (every match). A failing action is logged as a problem; the recording continues.
 
+**Slide kinds**: `title` · `boxes` · `diagram` · `takeaways` · `bullets` (title, lead, items) ·
+`code` (`file:` + `lines: "10-42"` + `highlight: [12, "15-18"]`, or inline `code:`) ·
+`stats` (`stats: [{value, label, delta, good}]`) · `chart` (`chart: {type: bar|hbar|line,
+labels, series: [{name, values}], unit, note}`, drawn as SVG) · `image` (`image:` path,
+`caption`). File paths are relative to the YAML. A YAML with **no `steps:`** is a narrated
+slide deck and needs no running app; `--audio` also writes `OUT/<slug>.m4a` (podcast).
+
+**Checks** (`expect:` on a step, run after it): `visible: SEL` · `hidden: SEL` · `js: "expr"` ·
+`text: [SEL, "regex"]` · `no_errors: true` (no console errors or failed requests so far).
+Failures are problems (exit status 1). Console errors, page errors, failed requests and
+HTTP ≥ 400 are always captured into `timeline.json` (`console`) and the dry run's
+`shots/steps.json`, which also lists every step's screenshot and narration.
+
 **Waits**: a selector (visible) or `js:<expression>`; `{until, timeout, caption}`.
 `DEMO_MAX_WAIT` caps every timeout (dry runs). Waits > 4 s are fast-forwarded to
 ≤ 2.5 s in the final cut, with the caption shown meanwhile.

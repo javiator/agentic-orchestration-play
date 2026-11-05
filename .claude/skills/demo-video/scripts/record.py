@@ -22,6 +22,10 @@ Step fields (YAML):
                (all: = every match, for check/uncheck/click).
     wait       selector (visible) or "js:<expr>", or {until, timeout, caption}
     hold       seconds to linger after the step (default 0.8)
+    expect     checks after the step; each failure is logged as a problem:
+                 - visible: SEL          - hidden: SEL         - js: "expr"
+                 - text: [SEL, "regex"]  - no_errors: true  (no console errors / failed
+                                                             requests so far)
 
 Templating in `say` (evaluated when the step starts, before its actions):
     {text:SEL}            visible text of the match (whitespace collapsed; line breaks → ". ")
@@ -97,6 +101,7 @@ class Demo:
     narration: list[dict] = field(default_factory=list)
     fast: list[tuple[float, float]] = field(default_factory=list)
     log: list[str] = field(default_factory=list)
+    console: list[str] = field(default_factory=list)  # console errors + failed requests
     shots: Path | None = None
 
     def now(self) -> float:
@@ -257,6 +262,42 @@ class Demo:
             raise RuntimeError(f"no element matches {sel}")
         return found
 
+    # ── checks ───────────────────────────────────────────────────────────────
+
+    def check(self, exp: dict, index: int = 0) -> bool:
+        (kind, arg), = exp.items()
+        try:
+            if kind == "visible":
+                ok, what = self.visible(arg), f"visible {arg}"
+            elif kind == "hidden":
+                ok, what = not self.visible(arg), f"hidden {arg}"
+            elif kind == "js":
+                ok, what = bool(self.page.evaluate(arg)), f"js {arg[:80]}"
+            elif kind == "text":
+                sel, pattern = arg
+                ok, what = bool(re.search(pattern, self.text(sel))), f"text {sel} ~ /{pattern}/"
+            elif kind == "no_errors":
+                ok, what = not self.console, f"no console errors ({'; '.join(self.console)[:200]})"
+            else:
+                raise ValueError(f"unknown expect: {kind}")
+        except Exception as exc:  # noqa: BLE001
+            ok, what = False, f"{kind} {json.dumps(arg)[:80]} ({str(exc).splitlines()[0][:120]})"
+        if not ok:
+            self.log.append(f"expect failed (step {index}): {what}")
+        return ok
+
+    def watch(self) -> None:
+        """Collect console errors, page errors, failed requests and HTTP errors."""
+        def on_console(msg):
+            if msg.type == "error":
+                self.console.append(f"console.error: {msg.text[:300]}")
+        self.page.on("console", on_console)
+        self.page.on("pageerror", lambda err: self.console.append(f"page error: {str(err)[:300]}"))
+        self.page.on("requestfailed", lambda req: self.console.append(
+            f"request failed: {req.method} {req.url} ({req.failure})"))
+        self.page.on("response", lambda res: res.status >= 400 and self.console.append(
+            f"HTTP {res.status}: {res.request.method} {res.url}"))
+
     # ── waits and steps ──────────────────────────────────────────────────────
 
     def wait(self, cond: str, timeout: float = 420, cap: str | None = None) -> None:
@@ -321,6 +362,8 @@ class Demo:
             self.wait(w["until"], timeout=float(w.get("timeout", 420)), cap=w.get("caption"))
             self.caption(tag, cap)
         self.page.wait_for_timeout(float(spec.get("hold", 0.8)) * 1000)
+        for exp in spec.get("expect") or []:
+            self.check(exp, index)
         if self.shots:
             self.shots.mkdir(parents=True, exist_ok=True)
             self.page.screenshot(path=str(self.shots / f"step{index:02d}.png"))
@@ -397,6 +440,7 @@ def record_demo(browser, narrator, base: str, script: dict, outdir: Path, shots:
     defaults = script.get("defaults") or {}
     demo = Demo(page=page, narrator=narrator, base=base.rstrip("/"), shots=shots,
                 label=defaults.get("tag", "DEMO"), wait_caption=defaults.get("wait_caption", "waiting for the app…"))
+    demo.watch()
     try:
         if script.get("start"):
             demo.goto(script["start"])
@@ -410,7 +454,7 @@ def record_demo(browser, narrator, base: str, script: dict, outdir: Path, shots:
     video_path.rename(webm)
     # Recording starts slightly before our clock; shift everything by the gap.
     offset = max(0.0, media_duration(webm) - elapsed)
-    timeline = {"webm": str(webm), "duration": media_duration(webm), "log": demo.log,
+    timeline = {"webm": str(webm), "duration": media_duration(webm), "log": demo.log, "console": demo.console,
                 "narration": [{**n, "t": n["t"] + offset} for n in demo.narration],
                 "fast": [(f[0] + offset, f[1] + offset, *f[2:]) for f in demo.fast]}
     (outdir / "recording.json").write_text(json.dumps(timeline, indent=1, ensure_ascii=False))

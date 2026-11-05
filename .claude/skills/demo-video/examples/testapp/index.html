@@ -28,6 +28,8 @@
     const q = document.getElementById('q').value;
     document.getElementById('result').textContent = `Score: -43% on "${q}" after 6/6 runs (${document.querySelectorAll('.opt:checked').length} options)`;
     document.getElementById('out').classList.remove('hidden');
+    console.error('selftest: deliberate console error');
+    fetch('missing.json').catch(() => {});
   }, 12000);
 </script>
 </body></html>

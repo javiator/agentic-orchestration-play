@@ -7,8 +7,9 @@
 For the page (and again after each `shot:`), writes into --out:
     NN-<name>.png      full-page screenshot (view it to see the layout)
     NN-<name>.md       an inventory: headings, inputs (with options), buttons,
-                       checkboxes, sample/chip lists, every element with an id,
-                       and a text outline — with ready-to-use CSS selectors.
+                       checkboxes, sample/chip lists, every element with an id —
+                       with ready-to-use CSS selectors — plus console errors and
+                       failed requests seen since the previous snapshot.
 
 --do steps run in order: click:SEL  fill:SEL=TEXT  check:SEL  select:SEL=VALUE
 wait:SEL (or wait:js:EXPR)  goto:URL  pause:SECONDS  shot:NAME. Use them to reach
@@ -103,6 +104,11 @@ def main() -> int:
     with sync_playwright() as p:
         browser = launch_browser(p)
         page = browser.new_page(viewport={"width": W, "height": H})
+        console: list[str] = []  # errors seen since the last snapshot
+        page.on("console", lambda m: m.type == "error" and console.append(f"console.error: {m.text[:300]}"))
+        page.on("pageerror", lambda err: console.append(f"page error: {str(err)[:300]}"))
+        page.on("requestfailed", lambda r: console.append(f"request failed: {r.method} {r.url} ({r.failure})"))
+        page.on("response", lambda r: r.status >= 400 and console.append(f"HTTP {r.status}: {r.request.method} {r.url}"))
 
         def snapshot(name: str) -> None:
             nonlocal n
@@ -110,7 +116,13 @@ def main() -> int:
             safe = re.sub(r"[^\w-]+", "-", name).strip("-") or "page"
             stem = args.out / f"{n:02d}-{safe}"
             page.screenshot(path=f"{stem}.png", full_page=True)
-            Path(f"{stem}.md").write_text(to_md(page.evaluate(INVENTORY_JS)))
+            md = to_md(page.evaluate(INVENTORY_JS))
+            if console:
+                md += "\n## Console errors / failed requests\n" + "\n".join(f"- {c}" for c in console) + "\n"
+                for c in console:
+                    print(f"  ! {c}")
+                console.clear()
+            Path(f"{stem}.md").write_text(md)
             print(f"  {stem}.png  {stem}.md")
 
         page.goto(args.url)

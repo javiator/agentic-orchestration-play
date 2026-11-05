@@ -92,7 +92,9 @@ def serve() -> tuple[str, http.server.HTTPServer]:
     return f"http://127.0.0.1:{server.server_address[1]}", server
 
 
-EXPECTED_PROBLEMS = ("template text empty: #nope", "highlight not found: #missing", "wait timed out (2s): js:false")
+EXPECTED_PROBLEMS = ("template text empty: #nope", "highlight not found: #missing", "wait timed out (2s): js:false",
+                     "expect failed (step 4): js document.title.includes('nope')")
+EXPECTED_PREFIXES = ("expect failed (step 4): no console errors",)
 
 
 def build(base: str, out: Path, *extra: str) -> subprocess.CompletedProcess:
@@ -110,15 +112,20 @@ def e2e(out: Path) -> None:
         print("dry run")
         res = build(base, out, "--dry-run")
         shots = sorted((out / "selftest" / "shots").glob("*.png"))
-        check(len([s for s in shots if s.name.startswith("step")]) == 5 and len(shots) == 9,
-              f"5 step screenshots + 4 slide PNGs ({len(shots)} files)")
+        check(len([s for s in shots if s.name.startswith("step")]) == 5 and len(shots) == 12,
+              f"5 step screenshots + 7 slide PNGs ({len(shots)} files)")
+        steps = json.loads((out / "selftest" / "shots" / "steps.json").read_text())
+        check(len(steps["steps"]) == 5 and len(steps["slides"]) == 7, "steps.json lists steps and slides")
+        check(any("deliberate console error" in c for c in steps["console"])
+              and any("missing.json" in c for c in steps["console"]), "console error + failed request captured")
         for p in EXPECTED_PROBLEMS:
             check(p in res.stdout, f"dry run reports: {p}")
         check("Sample second sample, size large, agreed." in res.stdout, "actions + js/if templating")
 
         print("full build")
-        res = build(base, out)
+        res = build(base, out, "--audio")
         mp4 = out / "selftest.mp4"
+        check((out / "selftest.m4a").exists(), "--audio writes an m4a")
         check(mp4.exists(), "MP4 written")
         probe = json.loads(subprocess.run(["ffprobe", "-v", "error", "-show_streams", "-of", "json", str(mp4)],
                                           capture_output=True, text=True).stdout)["streams"]
@@ -134,14 +141,16 @@ def e2e(out: Path) -> None:
               "result read from the page after the wait")
         check(result.endswith("Line one without punctuation. Line two."), "line breaks read as sentences")
         check(all(p in tl["problems"] for p in EXPECTED_PROBLEMS), "timeline.json lists the expected problems")
-        unexpected = [p for p in tl["problems"] if p not in EXPECTED_PROBLEMS and not p.startswith("video is")]
+        unexpected = [p for p in tl["problems"] if p not in EXPECTED_PROBLEMS and not p.startswith("video is")
+                      and not p.startswith(EXPECTED_PREFIXES)]
+        check(any(p.startswith(EXPECTED_PREFIXES) for p in tl["problems"]), "expect no_errors fails on console errors")
         check(not unexpected, f"no unexpected problems {unexpected or ''}")
         times = [line["t"] for line in tl["lines"]]
         check(times == sorted(times) and times[-1] < tl["duration"], "narration times increase, inside the video")
         wait_line = texts.index("Run, and wait for the result.")
         check(times[wait_line + 1] - times[wait_line] < 9, "~12 s wait fast-forwarded")
         chapters = [c["title"] for c in tl["chapters"]]
-        check(chapters[:3] == ["Self-test", "Boxes", "Diagram"] and "Result" in chapters, "chapters")
+        check(chapters[:4] == ["Self-test", "Boxes", "Diagram", "Code"] and "Result" in chapters, "chapters")
 
         print("reuse")
         before = mp4.stat().st_mtime
