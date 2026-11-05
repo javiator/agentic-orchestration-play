@@ -90,7 +90,7 @@ Read `AGENTS.md` first for the architecture and conventions.
   **mock** server (stable screenshots). No CI workflow is installed yet; the
   templates are in each skill's `templates/`.
 
-- Videos run 2.3–3.3 min, a bit under the original 3–5 min target.
+- Videos run 2.5–3.6 min (Kokoro voice, re-recorded 2026-11-05).
 - Demo outcomes vary between runs; the narration adapts, but some runs miss
   a teaching moment (a failing code run, a chain fix round). Re-record when
   that happens.
