@@ -65,6 +65,7 @@ start: /router/                  # first page (relative to --base, or a full URL
 tts: kokoro                      # optional: kokoro | piper | espeak (default auto)
 voice: am_michael                # optional: voice of that backend
 defaults: {tag: DEMO, wait_caption: "waiting for the models…", hold: 0.8}
+length: [2, 5]                   # optional: target minutes (a problem is logged outside it)
 
 concept:                         # slides before the demo; every slide has `say`
   - {kind: title, title: Router, lead: "One sentence.", chips: [a, b], say: "…"}

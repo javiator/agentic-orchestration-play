@@ -164,7 +164,8 @@ class Demo:
         out, _ = self._render(tokens, 0, stop=())
         return tidy(out)
 
-    def _render(self, tokens: list, i: int, stop: tuple) -> tuple[str, int]:
+    def _render(self, tokens: list, i: int, stop: tuple, active: bool = True) -> tuple[str, int]:
+        """Render until a stop tag; inactive branches are skipped without touching the page."""
         parts = []
         while i < len(tokens):
             kind, val = tokens[i]
@@ -174,15 +175,15 @@ class Demo:
                 parts.append(val)
                 i += 1
             elif val.startswith("if:"):
-                cond = self.visible(val[3:])
-                yes, i = self._render(tokens, i + 1, stop=("else", "end"))
+                cond = active and self.visible(val[3:])
+                yes, i = self._render(tokens, i + 1, stop=("else", "end"), active=active and cond)
                 no = ""
                 if i < len(tokens) and tokens[i][1] == "else":
-                    no, i = self._render(tokens, i + 1, stop=("end",))
+                    no, i = self._render(tokens, i + 1, stop=("end",), active=active and not cond)
                 i += 1  # skip {end}
                 parts.append(yes if cond else no)
             else:
-                parts.append(self._value(val))
+                parts.append(self._value(val) if active else "")
                 i += 1
         return "".join(parts), i
 

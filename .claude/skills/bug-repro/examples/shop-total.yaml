@@ -5,6 +5,7 @@ slug: shop-total
 kicker: "Bug reproduction · Tiny shop"
 start: /index.html
 defaults: {tag: REPRO, hold: 0.6}
+length: [0.5, 3]
 bug:
   title: Clearing a quantity shows "$NaN"; an unknown discount code breaks the page
   issue: "#42 (example)"

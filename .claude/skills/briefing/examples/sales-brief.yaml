@@ -3,6 +3,7 @@
 #   python3 ../../demo-video/scripts/build.py sales-brief.yaml --out OUT --audio
 slug: sales-brief
 kicker: "Weekly brief · Sales 2024–2025"
+length: [1, 4]
 tts: kokoro
 voice: am_michael
 

@@ -148,8 +148,9 @@ def build(spec: dict, browser, narrator: Narrator, base: str, out: Path, reuse: 
     size_mb = final.stat().st_size / 1e6
     if size_mb > MAX_MB:
         problems.append(f"file is {size_mb:.1f} MB (> {MAX_MB} MB)")
-    if not 120 <= duration <= 300:
-        problems.append(f"video is {duration / 60:.1f} min (aim for 2–5)")
+    lo, hi = spec.get("length", [2, 5])  # target minutes, per YAML
+    if not lo * 60 <= duration <= hi * 60:
+        problems.append(f"video is {duration / 60:.1f} min (target {lo}–{hi})")
     (work / "timeline.json").write_text(json.dumps({
         "video": str(final), "duration": round(duration, 2), "size_mb": round(size_mb, 2),
         "problems": problems, "console": console, "chapters": chapters,
