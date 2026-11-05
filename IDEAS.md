@@ -14,9 +14,16 @@ work, and what each idea below keeps:
 
 Status key: 💡 idea · 🧪 prototype · ✅ built
 
+All five are built as Claude Code skills on top of the `demo-video` engine (2026-11-05):
+one engine owns all media code; each idea is a thin workflow skill that writes YAML for it.
+
 ---
 
-## 1. Walkthrough videos for every pull request or release 💡
+## 1. Walkthrough videos for every pull request or release ✅
+
+> **Built:** `.claude/skills/pr-walkthrough/` — `pr_context.py` turns a diff into a brief
+> (areas, UI hooks, code-slide snippets); Claude writes the YAML; CI template included.
+> Example: `demos/showcase/pr-walkthrough.yaml`.
 
 **Problem.** Reviewers and product managers have to check out a branch to see
 a UI change; release notes are text.
@@ -40,7 +47,10 @@ cost and time per PR; what happens when the generated steps fail.
 
 ---
 
-## 2. Product docs that check themselves 💡
+## 2. Product docs that check themselves ✅
+
+> **Built:** `.claude/skills/living-docs/` — `docs.py` regenerates markdown + screenshots,
+> exits 1 on UI drift, lists changed screenshots (SSIM). Guides: `docs/guides/`.
 
 **Problem.** Screenshots and how-to guides go out of date as the UI changes,
 and nobody notices until a user complains.
@@ -61,7 +71,10 @@ how to review changed screenshots (image diff?).
 
 ---
 
-## 3. Personal briefing generator: data or documents in, short audio or video out 💡
+## 3. Personal briefing generator: data or documents in, short audio or video out ✅
+
+> **Built:** `.claude/skills/briefing/` — `data_brief.py` computes chart/stat JSON from a CSV;
+> slides-only video + `--audio` m4a. Example: `examples/sales-brief.yaml`.
 
 **Problem.** Long reports, dashboards and papers take time to read; weekly
 updates are repetitive to write.
@@ -85,7 +98,11 @@ how much to let the model choose vs fixed slide templates.
 
 ---
 
-## 4. Bug reproduction recorder 💡
+## 4. Bug reproduction recorder ✅
+
+> **Built:** `.claude/skills/bug-repro/` — Claude drives the app with `explore.py`; the repro
+> is a YAML whose `expect:` checks describe correct behaviour; `repro.py` gives a verdict
+> (exit 1 reproduced / 0 fixed / 2 inconclusive), `--also` for the fix branch, `--video`.
 
 **Problem.** Bug reports are vague ("it breaks when I click save"); developers
 lose time reproducing them, and fixes are verified by hand.
@@ -111,7 +128,11 @@ reproductions.
 
 ---
 
-## 5. Codebase tour generator for onboarding 💡
+## 5. Codebase tour generator for onboarding ✅
+
+> **Built:** `.claude/skills/codebase-tour/` — `tour_context.py` maps a repo (diagrams from
+> docstrings, definitions, routes); Claude plans areas and writes one YAML per video.
+> Example: `demos/showcase/skills-tour.yaml`.
 
 **Problem.** New team members spend days learning how a codebase is
 organized; architecture docs go stale.
