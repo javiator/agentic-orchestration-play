@@ -63,3 +63,8 @@ outro:
     Two bugs. An empty quantity is parsed as not-a-number, and an unknown code throws a
     type error before the message is set. Replay this script on the fix branch: it exits
     with zero once both are fixed.
+
+hub:
+  eyebrow: "Bug reproduction · built with bug-repro"
+  toc_label: "★"
+  summary: Two bugs in a tiny example shop, reproduced as a replayable script with checks — the evidence video it records.

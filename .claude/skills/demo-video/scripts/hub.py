@@ -197,7 +197,8 @@ def main() -> int:
     ap.add_argument("demos", nargs="+", type=Path)
     ap.add_argument("--urls", type=Path, help="JSON: slug → video URL, or slug → {video, poster}")
     ap.add_argument("--videos", default=".", help="folder/URL prefix for <slug>.mp4/.jpg when not in --urls")
-    ap.add_argument("--build-dir", type=Path, help="build.py --out folder: adds durations, chapters, transcripts")
+    ap.add_argument("--build-dir", type=Path, action="append", default=[],
+                    help="build.py --out folder (repeatable): adds durations, chapters, transcripts")
     ap.add_argument("--posters", action="store_true", help="write <build-dir>/<slug>.jpg poster frames")
     ap.add_argument("--title", default="Demo videos")
     ap.add_argument("--intro", default="")
@@ -210,19 +211,18 @@ def main() -> int:
         specs.append(spec)
     urls = json.loads(args.urls.read_text()) if args.urls else {}
     timelines, posters = {}, set()
-    if args.build_dir:
-        for spec in specs:
-            slug = spec["slug"]
-            tl_path = args.build_dir / slug / "timeline.json"
-            if not tl_path.exists():
-                print(f"[hub] no timeline for {slug} (not built yet?)", file=sys.stderr)
-                continue
-            timelines[slug] = json.loads(tl_path.read_text())
-            jpg = args.build_dir / f"{slug}.jpg"
-            if args.posters and (args.build_dir / f"{slug}.mp4").exists():
-                make_poster(args.build_dir / f"{slug}.mp4", timelines[slug], jpg)
-            if jpg.exists():
-                posters.add(slug)
+    for spec in specs if args.build_dir else []:
+        slug = spec["slug"]
+        bdir = next((d for d in args.build_dir if (d / slug / "timeline.json").exists()), None)
+        if not bdir:
+            print(f"[hub] no timeline for {slug} (not built yet?)", file=sys.stderr)
+            continue
+        timelines[slug] = json.loads((bdir / slug / "timeline.json").read_text())
+        jpg = bdir / f"{slug}.jpg"
+        if args.posters and (bdir / f"{slug}.mp4").exists():
+            make_poster(bdir / f"{slug}.mp4", timelines[slug], jpg)
+        if jpg.exists():
+            posters.add(slug)
     print(render(specs, urls, args.videos, args.title, args.intro, args.footer, timelines, posters))
     return 0
 

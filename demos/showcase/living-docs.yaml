@@ -77,5 +77,6 @@ outro:
   foot: "docs/guides/ · .claude/skills/living-docs/"
 
 hub:
+  toc_label: "★"
   eyebrow: "Living docs · built with living-docs"
   summary: How-to guides that regenerate their screenshots from the app and fail like a test when the UI drifts.

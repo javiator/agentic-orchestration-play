@@ -83,5 +83,6 @@ outro:
   foot: "Source: examples/sales.csv (288 rows, 2024-01 → 2025-12) · numbers from data_brief.py"
 
 hub:
+  toc_label: "★"
   eyebrow: Sales brief
   summary: Revenue +16% in 2025; South +34%, West +21%; East and North grew on price, not volume; Q4 peaks.

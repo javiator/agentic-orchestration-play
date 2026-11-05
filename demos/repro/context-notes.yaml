@@ -8,6 +8,7 @@ tts: kokoro
 voice: am_michael
 start: /context/
 defaults: {tag: REPRO, wait_caption: "replaying the conversation four ways…"}
+length: [1, 4]
 bug:
   title: Notes strategy forgets earlier facts after compaction
   issue: "fixed in ca68e24"
@@ -23,7 +24,7 @@ concept:
   chips: [context exercise, real models, regression check]
   say: >-
     This is a real bug from this repository's history. In the context exercise, the notes strategy
-    was supposed to keep durable facts about the user, but after compaction it forgot most of them.
+    was supposed to keep durable facts about the user, but after compaction it lost several of them.
     Here is the automatic reproduction.
 
 steps:
@@ -63,3 +64,8 @@ outro:
     the newest facts. The fix asks for the complete list, keeping every note word for word. This
     script now guards against it coming back.
   pause: 2.0
+
+hub:
+  eyebrow: "Bug reproduction · built with bug-repro"
+  toc_label: "★"
+  summary: A real bug from this repo's history (fixed in ca68e24), reproduced from its description against the pre-fix app; the same script passes on the fix.

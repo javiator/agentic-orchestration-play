@@ -88,5 +88,6 @@ outro:
   foot: "main..claude/zen-dijkstra-sulp2q"
 
 hub:
+  toc_label: "★"
   eyebrow: "PR walkthrough · built with pr-walkthrough"
   summary: What this branch changes — the demo-video skill, the re-recorded videos and five workflow skills — and how to review it.

@@ -115,5 +115,6 @@ outro:
   foot: ".claude/skills/ · demo-video + 5 workflow skills"
 
 hub:
+  toc_label: "★"
   eyebrow: "Code tour · built with codebase-tour"
   summary: How the demo-video engine and the five workflow skills fit together, with the key code.

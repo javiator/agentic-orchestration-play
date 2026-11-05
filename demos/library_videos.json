@@ -1,0 +1,78 @@
+{
+ "overview": {
+  "video": "/_blob/692fcc15816ed5b47e189f2ba9bdd541",
+  "poster": "/_blob/fe3152720f557bcfcb63a4c42adf472c"
+ },
+ "consensus": {
+  "video": "/_blob/e2ed6d6ef318616e792cd8ee7770934c",
+  "poster": "/_blob/38c45ff7d9fe1ad79ca86abfd7da476a"
+ },
+ "router": {
+  "video": "/_blob/7fdd0d106a9fbb8b02406b1e1ad8f6e5",
+  "poster": "/_blob/51438677e1bc457e2cfc106fbde9f006"
+ },
+ "supervisor": {
+  "video": "/_blob/70c714dfecb500d3ce1c119ac398ee4a",
+  "poster": "/_blob/b0558f3c853fb0fda95b4b0fae8f28cc"
+ },
+ "planner": {
+  "video": "/_blob/9fa73f9dc791a0684cfd45d5512fdc0b",
+  "poster": "/_blob/5a4b80830ad720b16a34f877c6b4c94a"
+ },
+ "chain": {
+  "video": "/_blob/60d2a3b9ac39ce049e5d93fbf3d98c9c",
+  "poster": "/_blob/7461e66266ba017ea320541ba4e422f3"
+ },
+ "rag": {
+  "video": "/_blob/6ed981a125bfbe1d2f5524e0f68de4b5",
+  "poster": "/_blob/894f3001f77d76b0b9338d995ed8e2df"
+ },
+ "reflection": {
+  "video": "/_blob/a08179ffab69d8854bccf91d1a046b8c",
+  "poster": "/_blob/701757e2c9e4570fe048c97746df93f3"
+ },
+ "code-agent": {
+  "video": "/_blob/25de93911673ab491b845cf80667b4da",
+  "poster": "/_blob/47ae3cd79e622bbf9a07d2d7b3270a80"
+ },
+ "hitl": {
+  "video": "/_blob/383991c9f28c73f03680c8cde3f157ac",
+  "poster": "/_blob/45e2cd6b41ac8cb54ff6900ec4dbd7ff"
+ },
+ "guardrails": {
+  "video": "/_blob/c2a9ad4feae8a55a395c1b757a7ba37c",
+  "poster": "/_blob/ed8552c037d2526df634215a66c14fd2"
+ },
+ "context": {
+  "video": "/_blob/c48d89af9f04ee98a9de71afabdadadf",
+  "poster": "/_blob/fab76994ebcf293c3bc4a56084cccc1f"
+ },
+ "eval": {
+  "video": "/_blob/519caf2d4c1318c805d10a5487dfecb7",
+  "poster": "/_blob/475f75223702253fd7f0a02ad273a054"
+ },
+ "skills-tour": {
+  "video": "/_blob/b1752a5504af1002836c4f2103cef1bd",
+  "poster": "/_blob/a2a6940b48e3a1214dbbb9c783d7773c"
+ },
+ "pr-walkthrough": {
+  "video": "/_blob/50ab5c912996689f0655fd145881e680",
+  "poster": "/_blob/c4a8d1e077e81bedbcfe4a8120c668fa"
+ },
+ "context-notes": {
+  "video": "/_blob/e992cbea4f2ab4a240d6b339aaef3efe",
+  "poster": "/_blob/79fc05b610baabed0859e1002f0cd78b"
+ },
+ "shop-total": {
+  "video": "/_blob/46a0db8976c09093691be4386a40df3c",
+  "poster": "/_blob/c4809fd0376ab0f468c9507d258509d7"
+ },
+ "sales-brief": {
+  "video": "/_blob/058f1e23ef00551c2a42c8e3a1d6dfdd",
+  "poster": "/_blob/a692b049d0641e88cc84802a78df668d"
+ },
+ "living-docs": {
+  "video": "/_blob/4c1b6aba1154e407f6176fd3714578e8",
+  "poster": "/_blob/36793463d6568732e2241de5345b5bde"
+ }
+}
