@@ -107,10 +107,10 @@ steps:
   hold: 2.0
 - say: >-
     {text:#savings|before:(}.
-    {if:js:document.getElementById('savings').innerText.split('%')[0].includes('-')}On this request
-    routing cost more: a reasoning question needs the strong model anyway, plus the router's call. The
-    savings come from the easy majority of traffic, as long as you measure the misroutes too.{else}Over a
-    day of real traffic, those savings add up, as long as you measure the misroutes too.{end}
+    {if:js:document.getElementById('savings').innerText.split('%')[0].includes('-')}Routing used
+    more tokens here: a reasoning question needs the strong model anyway, plus the router's own call.
+    The savings come from the easy majority of traffic, as long as you measure the misroutes too.{else}Over
+    a day of real traffic, those savings add up, as long as you measure the misroutes too.{end}
   caption: The savings line
   highlight: '#savings'
   hold: 2.5

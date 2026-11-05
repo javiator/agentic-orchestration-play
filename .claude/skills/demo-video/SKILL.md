@@ -101,7 +101,7 @@ hub: {eyebrow: "Exercise 2 of 12", summary: "…", tries: [..], code: "https://�
 (every match). A failing action is logged as a problem; the recording continues.
 
 **Slide kinds**: `title` · `boxes` · `diagram` · `takeaways` · `bullets` (title, lead, items) ·
-`code` (`file:` + `lines: "10-42"` + `highlight: [12, "15-18"]`, or inline `code:`) ·
+`code` (`file:` + `lines: "10-42"` or `"10-20, 31-35"` + `highlight: [12, "15-18"]`, or inline `code:`) ·
 `stats` (`stats: [{value, label, delta, good}]`) · `chart` (`chart: {type: bar|hbar|line,
 labels, series: [{name, values}], unit, note}`, drawn as SVG) · `image` (`image:` path,
 `caption`). File paths are relative to the YAML. A YAML with **no `steps:`** is a narrated

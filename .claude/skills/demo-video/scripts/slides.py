@@ -6,8 +6,9 @@ Kinds and their fields (all take `say`, optional `foot` and `pause`):
     diagram    title, diagram: |  (monospace text; the font shrinks to fit)
     takeaways  title (default "Takeaways"), items: [..]
     bullets    title, lead (optional), items: [..]
-    code       title, code: | or file: path + lines: "10-42"; highlight: [12, "15-18"]
-               (file line numbers); path shown above the code. Font shrinks to fit.
+    code       title, code: | or file: path + lines: "10-42" (or "10-20, 31-35": excerpts
+               joined by a ⋯ row); highlight: [12, "15-18"] (file line numbers); path
+               shown above the code. Font shrinks to fit.
     stats      title, stats: [{value, label, delta (optional, e.g. "+12%"), good: true|false}]
     chart      title, chart: {type: bar|hbar|line, labels: [..], series: [{name, values: [..]}],
                unit: "%" (optional), note (optional)}   — rendered as SVG, no dependencies
@@ -21,6 +22,7 @@ from __future__ import annotations
 
 import base64
 import html
+import re
 import mimetypes
 from pathlib import Path
 
@@ -60,10 +62,13 @@ def slide_html(slide: dict, kicker: str, css: str) -> str:
             body += f'<div class="path">{e(slide["path"])}</div>'
         hl = _line_set(slide.get("highlight") or [])
         first = int(slide.get("start", 1))
-        lines = slide["code"].rstrip("\n").expandtabs(4).splitlines()
-        rows = "".join(f'<div class="ln{" hl" if first + i in hl else ""}"><span class="no">{first + i}</span>'
-                       f'<span class="src">{e(line) or " "}</span></div>'
-                       for i, line in enumerate(lines))
+        numbered = slide.get("numbered") or [(first + i, line) for i, line in
+                                              enumerate(slide["code"].rstrip("\n").splitlines())]
+        lines = [line.expandtabs(4) if no is not None else "" for no, line in numbered]
+        rows = "".join(f'<div class="ln{" hl" if no in hl else ""}"><span class="no">{no}</span>'
+                       f'<span class="src">{e(line.expandtabs(4)) or " "}</span></div>' if no is not None else
+                       '<div class="ln gap"><span class="no">⋯</span><span class="src"> </span></div>'
+                       for no, line in numbered)
         # Size the font so every line fits: height (~520px) and width (~1060px of text).
         widest = max((len(x) for x in lines), default=1) + 6
         size = max(10.0, min(24.0, 520 / (len(lines) * 1.38), 1060 / (widest * 0.61)))
@@ -107,11 +112,19 @@ def resolve(slide: dict, base: Path) -> dict:
     if slide.get("kind") == "code" and slide.get("file") and "code" not in slide:
         path = (base / slide["file"]).resolve()
         lines = path.read_text(errors="replace").splitlines()
-        a, _, b = str(slide.get("lines", f"1-{len(lines)}")).partition("-")
-        a, b = int(a), int(b or a)
-        slide["code"] = "\n".join(lines[a - 1:b])
-        slide.setdefault("start", a)
-        slide.setdefault("path", f'{slide["file"]}:{a}–{b}')
+        spans = []  # "10-20, 31-35" → excerpts joined by a ⋯ row
+        for part in str(slide.get("lines", f"1-{len(lines)}")).split(","):
+            a, _, b = part.strip().partition("-")
+            spans.append((int(a), int(b or a)))
+        numbered: list = []
+        for a, b in spans:
+            if numbered:
+                numbered.append((None, ""))
+            numbered += [(n, lines[n - 1]) for n in range(a, min(b, len(lines)) + 1)]
+        slide["numbered"] = numbered
+        slide["code"] = "\n".join(line for _, line in numbered)
+        shown = re.sub(r"^(\.\.?/)+", "", str(slide["file"]))
+        slide.setdefault("path", f"{shown}:" + ", ".join(f"{a}–{b}" if b != a else str(a) for a, b in spans))
     if slide.get("kind") == "image" and not str(slide.get("image", "")).startswith("data:"):
         path = (base / slide["image"]).resolve()
         mime = mimetypes.guess_type(path.name)[0] or "image/png"

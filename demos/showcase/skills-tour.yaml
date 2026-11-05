@@ -1,0 +1,119 @@
+# Built with the codebase-tour skill: a tour of the video skills in .claude/skills/.
+# Code slides read the files at build time (paths relative to this YAML).
+slug: skills-tour
+kicker: "Code tour · the video skills"
+tts: kokoro
+voice: am_michael
+
+concept:
+- kind: title
+  title: Inside the video skills
+  lead: One engine that records narrated demos, and five small skills that write scripts for it.
+  chips: [demo-video engine, pr-walkthrough, bug-repro, briefing, living-docs, codebase-tour]
+  say: >-
+    This is a tour of the video skills. There is one engine, demo-video, that turns a script into a
+    narrated video, and five small skills that write those scripts for different jobs: pull request
+    walkthroughs, bug reproductions, data briefings, living docs, and code tours like this one.
+
+- kind: diagram
+  title: How it fits together
+  diagram: |2
+     YAML script ──▶ build.py
+                       │
+      ┌────────────────┼──────────────────────┐
+      ▼                ▼                      ▼
+    slides.py        record.py              narrate.py
+    HTML → PNG       Playwright drives      text → WAV
+    title, code,     the live app: caption, Kokoro / Piper /
+    chart, stats…    highlight, actions,    espeak, cached
+                     waits, expect: checks
+      │                │ video + timeline       │
+      └────────────────┼────────────────────────┘
+                       ▼
+                  assemble.py ──▶ MP4 · subtitles · m4a · timeline.json
+                  ffmpeg: fast-forward, mix, subtitles, loudness
+
+     workflow skills write the YAML and call the engine:
+       pr-walkthrough · bug-repro · briefing · living-docs · codebase-tour
+  foot: "from .claude/skills/demo-video/scripts/build.py"
+  say: >-
+    Everything starts from a YAML script, which is data that Claude can write and edit. The build
+    script renders the slides to images, drives the real app in a browser while it records, and
+    synthesizes the narration. Then ffmpeg assembles one video, with long waits fast-forwarded,
+    subtitles burned in, and a timeline that says what was said, and when. The five workflow skills
+    never touch video code: they only write scripts.
+  pause: 1.5
+
+- kind: code
+  title: "One step: narrate, act, wait, check"
+  file: ../../.claude/skills/demo-video/scripts/record.py
+  lines: "367-377, 386-404"
+  highlight: [372, "375-377", "389-390", "403-404"]
+  say: >-
+    This is the heart of the recorder: one step. It renders the narration from the page first, so
+    it describes what really happened. If speech synthesis is slow, that dead air is marked to be
+    cut. The actions run while the narration plays, so the video never waits for the voice. And
+    after the step, the expect checks run: that's what turns a demo into a test.
+
+- kind: code
+  title: Fast-forwarding the boring parts
+  file: ../../.claude/skills/demo-video/scripts/assemble.py
+  lines: "36-59"
+  highlight: ["44-47", "55-57"]
+  say: >-
+    Waits for the app are recorded in real time, then squeezed. Each slow span becomes a segment
+    that plays in at most two and a half seconds, and every narration line is re-mapped into the
+    shortened timeline. A two-minute model call becomes a quick fast-forward with a caption.
+
+- kind: code
+  title: Voices are plug-ins
+  file: ../../.claude/skills/demo-video/scripts/narrate.py
+  lines: "138-164"
+  highlight: [138, 139, "159-163"]
+  say: >-
+    Speech is a small plug-in interface. Kokoro is the natural-sounding default, Piper is the fast
+    one, and espeak is the last resort, tried in that order. Adding ElevenLabs later means one new
+    class and one line here; nothing downstream changes, because everything after this only sees
+    audio files.
+
+- kind: code
+  title: "bug-repro: a verdict from the same checks"
+  file: ../../.claude/skills/bug-repro/scripts/repro.py
+  lines: "55-70"
+  highlight: ["65-68"]
+  say: >-
+    The workflow skills stay small because the engine does the work. Bug repro replays a script
+    headless and reads the problems it reports. A failed check means the bug happened. A broken
+    selector means the script itself needs fixing. Those three verdicts make the same file a bug
+    report, a regression test, and the source of an evidence video.
+
+- kind: boxes
+  title: Why one engine and thin skills
+  boxes:
+  - head: The engine owns
+    items: [Recording, Slides, Voices, Assembly, Self-test]
+  - head: Each skill owns
+    items: [When to use it, Its workflow, One small script, Examples]
+  - head: Your project owns
+    items: [Only YAML and data, No video code, Outputs where you choose]
+  say: >-
+    The design choice: one engine owns all the media code, and it's tested by its own self-test.
+    Each workflow skill owns only its trigger, its workflow, and one small script. A project owns
+    nothing but YAML and data. A fix in the engine helps all five skills at once.
+
+outro:
+- kind: takeaways
+  items:
+  - "Scripts are data: Claude writes YAML; the engine does the media work."
+  - "Narration reads the page, and expect: checks make every demo a test."
+  - "Start reading at demo-video/scripts/build.py, then record.py."
+  say: >-
+    Three things to remember. Scripts are data: Claude writes the YAML, and the engine does the
+    media work. Narration reads the page, and the checks make every demo a test. To read the code,
+    start with the build script, then the recorder.
+  pause: 2.0
+  foot: ".claude/skills/ · demo-video + 5 workflow skills"
+
+hub:
+  eyebrow: "Code tour · built with codebase-tour"
+  summary: How the demo-video engine and the five workflow skills fit together, with the key code.

@@ -30,6 +30,7 @@ pre { font-family: 'DejaVu Sans Mono', monospace; color: #dbe7ff; background: #0
 .code .ln.hl { background: rgba(245,185,74,.16); box-shadow: inset 4px 0 0 #f5b94a; }
 .code .no { flex: none; width: 4.2em; text-align: right; padding-right: 1.2em; color: #4f6190; }
 .code .ln.hl .no { color: #f5b94a; }
+.code .ln.gap .no { color: #6f7fa8; }
 .stats { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); gap: 28px; margin: auto 0; padding-bottom: 40px; }
 .stat { background: #16203a; border: 1px solid #2b3a63; border-radius: 22px; padding: 44px 36px; min-height: 260px; }
 .stat .v { font-size: 84px; font-weight: 800; color: #f5b94a; line-height: 1.05; letter-spacing: -.02em; }
