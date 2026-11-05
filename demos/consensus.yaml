@@ -110,25 +110,31 @@ steps:
   wait: {until: '#disagreements-card:not(.hidden)', caption: rebuttal + second judge round…}
 - say: >-
     {js:(() => { const p = document.querySelector('#rebuttal-body p');
-    const n = (p ? p.innerText : '').match(/\d+/g) || [];
-    if (n.length < 2) return "Done. The judge's verdict is in.";
-    const b = +n[0], a = +n[1];
-    const head = `Done. Round one had ${b} disagreement${b === 1 ? '' : 's'}; after the rebuttal, ${a} ${a === 1 ? 'remains' : 'remain'}. `;
+    const t = p ? p.innerText : '';
+    const m1 = t.match(/(\d+)\s+disagreement/), m2 = t.match(/after rebuttal:\s*(\d+)/i);
+    if (!m1 || !m2) return "Done. The judge's verdict is in.";
+    const b = +m1[1], a = +m2[1];
+    const head = `Done. Round one had ${b} disagreement${b === 1 ? '' : 's'}; after the rebuttal, ${a === 0 ? 'none remain' : a === 1 ? '1 remains' : a + ' remain'}. `;
     return head + (a < b ? 'The agents converged where the evidence was clear.'
     : "The agents held their positions. When models keep disagreeing after seeing each other's evidence, that's a real open question, worth checking yourself."); })()}
   caption: Did rebuttal shrink them?
   highlight: '#rebuttal-card'
   hold: 1.5
 - say: >-
-    Here's what's left. Each disagreement has a topic, and under it, which model claimed what. This is
-    the most useful part: it tells you exactly where to double-check.
+    {if:#disagreements-body .disagreement}Here's what's left. Each disagreement has a topic, and under
+    it, which model claimed what. This is the most useful part: it tells you exactly where to
+    double-check.{else}Nothing is left: the judge found no remaining disagreement. The round-one list
+    stays in the rebuttal card, each with a topic and which model claimed what: that's where you'd
+    double-check.{end}
   caption: Disagreements, attributed
   highlight: '#disagreements-card'
   actions: [wheel: 200]
   hold: 2.5
-- say: Panels marked revised changed their answer in the rebuttal round.
+- say: >-
+    {if:#agents-grid .revised-badge}Panels marked revised changed their answer in the rebuttal
+    round.{else}No panel is marked revised: every agent defended its first answer.{end}
   caption: Revised answers
-  highlight: '#agents-grid .revised-badge'
+  highlight: '#agents-grid'
   hold: 1.0
 - say: >-
     And the merged answer: one synthesis, written by the judge from all the successful answers, with

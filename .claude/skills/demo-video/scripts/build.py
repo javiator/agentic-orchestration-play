@@ -38,7 +38,7 @@ from playwright.sync_api import sync_playwright  # noqa: E402
 from assemble import concat_final, demo_clip, slide_clip, write_srt  # noqa: E402
 from common import SetupError, check_ffmpeg, launch_browser, media_duration, run  # noqa: E402
 from narrate import Narrator  # noqa: E402
-from record import record_demo  # noqa: E402
+from record import record_demo, tidy  # noqa: E402
 from slides import render_slides, resolve  # noqa: E402
 
 MAX_MB = 15
@@ -131,7 +131,7 @@ def build(spec: dict, browser, narrator: Narrator, base: str, out: Path, reuse: 
             if n.get("caption") and n["caption"] != last_caption:
                 chapters.append({"t": round(clock + n["t"], 2), "title": n["caption"], "part": "demo"})
                 last_caption = n["caption"]
-            cues.append({"t": clock + n["t"], "dur": n["dur"], "text": n["text"], "part": "demo"})
+            cues.append({"t": clock + n["t"], "dur": n["dur"], "text": tidy(n["text"]), "part": "demo"})
         parts.append(clip)
         clock += media_duration(clip)
 

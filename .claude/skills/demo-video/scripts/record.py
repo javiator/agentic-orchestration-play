@@ -162,7 +162,7 @@ class Demo:
     def render_say(self, template: str) -> str:
         tokens = _tokenize(template)
         out, _ = self._render(tokens, 0, stop=())
-        return re.sub(r"\s+", " ", out).strip()
+        return tidy(out)
 
     def _render(self, tokens: list, i: int, stop: tuple) -> tuple[str, int]:
         parts = []
@@ -406,6 +406,12 @@ class Demo:
             self.shots.mkdir(parents=True, exist_ok=True)
             self.page.screenshot(path=str(self.shots / f"step{index:02d}.png"))
             self.element_shot(self.shots / f"step{index:02d}-el.png")
+
+
+def tidy(text: str) -> str:
+    """Collapse whitespace and drop spaces left before punctuation by templates ("score ." → "score.")."""
+    text = re.sub(r"\s+", " ", text)
+    return re.sub(r"\s+([.,;:!?])", r"\1", text).strip()
 
 
 def _tokenize(template: str) -> list[tuple[str, str]]:
