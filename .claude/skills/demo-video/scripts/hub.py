@@ -1,7 +1,11 @@
 """Render a hub page (one self-contained HTML file) listing several videos.
 
     python3 hub.py demos/*.yaml --title "Lessons" --intro "One video per ..." \
-        [--urls urls.json] [--videos OUT_DIR] [--footer "..."] > hub.html
+        [--build-dir OUT --posters] [--urls urls.json] [--videos PREFIX] [--footer "..."] > hub.html
+
+With --build-dir (build.py's --out), each card gets its duration, clickable
+chapters and a transcript from timeline.json; --posters also writes a poster
+frame per video (<build-dir>/<slug>.jpg) taken from the live demo.
 
 Each YAML's optional `hub:` block supplies the card:
     hub:
@@ -12,8 +16,8 @@ Each YAML's optional `hub:` block supplies the card:
       tries: [..]                       # "try this" suggestions
       diagram: |                        # default: the first diagram slide
       code: https://...                 # "Read the code →" link
-Video sources: --urls maps slug → URL (e.g. files uploaded next to the page);
-otherwise <videos>/<slug>.mp4. Cards follow the order of the YAML arguments.
+Video sources: --urls maps slug → URL or {video, poster} (e.g. files uploaded
+next to the page); otherwise <videos>/<slug>.mp4 and <videos>/<slug>.jpg. Cards follow the order of the YAML arguments.
 """
 
 from __future__ import annotations
@@ -21,6 +25,7 @@ from __future__ import annotations
 import argparse
 import html
 import json
+import subprocess
 import sys
 from pathlib import Path
 
@@ -73,6 +78,15 @@ ol, ul { margin: 0; padding-left: 22px; } li { margin-bottom: 6px; }
 .try li { background: var(--accent-soft); border-radius: 8px; padding: 6px 10px; list-style-position: inside; margin-left: -22px; }
 a.code { color: var(--accent); font-weight: 600; }
 footer { color: var(--muted); font-size: 14px; margin-top: 40px; }
+nav.toc .dur { color: var(--muted); font-size: 12px; margin-left: 6px; font-variant-numeric: tabular-nums; }
+.chapters { display: flex; flex-wrap: wrap; gap: 6px; }
+.chapters button, .transcript button { font: inherit; font-size: 14px; color: var(--ink); background: var(--bg);
+  border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; cursor: pointer; }
+.chapters button span { color: var(--accent); font-variant-numeric: tabular-nums; margin-right: 6px; font-weight: 600; }
+.chapters button:hover, .chapters button:focus-visible, .transcript button:hover { border-color: var(--accent); outline: none; }
+.transcript p { margin: 8px 0; max-width: 72ch; }
+.transcript button { padding: 1px 8px; margin-right: 8px; font-size: 12px; color: var(--accent);
+  font-variant-numeric: tabular-nums; }
 code { font-family: var(--mono); font-size: .9em; }
 """
 
@@ -91,14 +105,44 @@ def card(spec: dict) -> dict:
     return hub
 
 
-def render(specs: list[dict], urls: dict[str, str], videos: str, title: str, intro: str, footer: str) -> str:
+def _mmss(t: float) -> str:
+    return f"{int(t) // 60}:{int(t) % 60:02d}"
+
+
+def make_poster(mp4: Path, timeline: dict, out: Path) -> None:
+    """A frame from the live demo (a few seconds into its first step), as JPEG."""
+    demo = next((c["t"] for c in timeline.get("chapters", []) if c.get("part") == "demo"), 2.0)
+    subprocess.run(["ffmpeg", "-v", "error", "-y", "-ss", f"{demo + 4:.2f}", "-i", str(mp4), "-frames:v", "1",
+                    "-q:v", "4", "-vf", "scale=960:-2", str(out)], check=True)
+
+
+JS = """document.addEventListener('click', ev => {
+  const b = ev.target.closest('[data-t]'); if (!b) return;
+  const v = b.closest('section').querySelector('video'); if (!v) return;
+  v.currentTime = parseFloat(b.dataset.t); v.play().catch(() => {});
+  v.scrollIntoView({behavior: 'smooth', block: 'center'});
+});"""
+
+
+def render(specs: list[dict], urls: dict, videos: str, title: str, intro: str, footer: str,
+           timelines: dict[str, dict] | None = None, posters: set[str] | None = None) -> str:
     e = html.escape
+    timelines, posters = timelines or {}, posters or set()
     cards = [(s["slug"], card(s)) for s in specs]
-    toc = "".join(f'<a href="#{e(slug)}"><b>{e(str(c["toc_label"] or i))}</b>{e(c["title"])}</a>'
+    prefix = videos.rstrip("/") + "/"
+
+    def dur(slug: str) -> str:
+        tl = timelines.get(slug)
+        return f'<span class="dur">{_mmss(tl["duration"])}</span>' if tl else ""
+
+    toc = "".join(f'<a href="#{e(slug)}"><b>{e(str(c["toc_label"] or i))}</b>{e(c["title"])}{dur(slug)}</a>'
                   for i, (slug, c) in enumerate(cards, 1))
     sections = []
     for slug, c in cards:
-        src = urls.get(slug, f"{videos.rstrip('/')}/{slug}.mp4")
+        u = urls.get(slug) or {}
+        u = {"video": u} if isinstance(u, str) else u
+        src = u.get("video") or f"{prefix}{slug}.mp4"
+        poster = u.get("poster") or (f"{prefix}{slug}.jpg" if slug in posters else "")
         lists = ""
         if c["takeaways"] or c["tries"]:
             lists = '<div class="cols">'
@@ -107,14 +151,27 @@ def render(specs: list[dict], urls: dict[str, str], videos: str, title: str, int
             if c["tries"]:
                 lists += f"<div><h3>Try this</h3><ul class=\"try\">{''.join(f'<li>{e(t)}</li>' for t in c['tries'])}</ul></div>"
             lists += "</div>"
+        tl = timelines.get(slug)
+        chapters = transcript = ""
+        if tl:
+            chapters = ('<div><h3>Chapters</h3><div class="chapters">' + "".join(
+                f'<button type="button" data-t="{ch["t"]}"><span>{_mmss(ch["t"])}</span>{e(ch["title"])}</button>'
+                for ch in tl.get("chapters", [])) + "</div></div>")
+            transcript = ('<details class="transcript"><summary>Transcript</summary>' + "".join(
+                f'<p><button type="button" data-t="{ln["t"]}">{_mmss(ln["t"])}</button>{e(ln["text"])}</p>'
+                for ln in tl.get("lines", [])) + "</details>")
         diagram = f"<details><summary>The diagram</summary><pre>{e(c['diagram'])}</pre></details>" if c["diagram"] else ""
         code = f'<div><a class="code" href="{e(c["code"])}">Read the code →</a></div>' if c["code"] else ""
-        eyebrow = f'<div class="eyebrow">{e(c["eyebrow"])}</div>' if c["eyebrow"] else ""
+        eyebrow = f'<div class="eyebrow">{e(c["eyebrow"])}{" · " + _mmss(tl["duration"]) if tl else ""}</div>' \
+            if c["eyebrow"] or tl else ""
+        poster_attr = f' poster="{e(poster)}"' if poster else ""
         sections.append(f"""<section class="ex" id="{e(slug)}">
 <div>{eyebrow}<h2>{e(c['title'])}</h2></div>
-<video controls preload="metadata" playsinline src="{e(src)}"></video>
+<video controls preload="metadata" playsinline src="{e(src)}"{poster_attr}></video>
 <p class="summary">{e(c['summary'])}</p>
+{chapters}
 {lists}
+{transcript}
 {diagram}
 {code}
 </section>""")
@@ -130,14 +187,17 @@ def render(specs: list[dict], urls: dict[str, str], videos: str, title: str, int
 {''.join(sections)}
 <footer>{e(footer)}</footer>
 </div>
+<script>{JS}</script>
 """
 
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("demos", nargs="+", type=Path)
-    ap.add_argument("--urls", type=Path, help="JSON: slug → video URL")
-    ap.add_argument("--videos", default=".", help="folder/URL prefix for <slug>.mp4 when not in --urls")
+    ap.add_argument("--urls", type=Path, help="JSON: slug → video URL, or slug → {video, poster}")
+    ap.add_argument("--videos", default=".", help="folder/URL prefix for <slug>.mp4/.jpg when not in --urls")
+    ap.add_argument("--build-dir", type=Path, help="build.py --out folder: adds durations, chapters, transcripts")
+    ap.add_argument("--posters", action="store_true", help="write <build-dir>/<slug>.jpg poster frames")
     ap.add_argument("--title", default="Demo videos")
     ap.add_argument("--intro", default="")
     ap.add_argument("--footer", default="Videos built with the demo-video skill.")
@@ -148,7 +208,21 @@ def main() -> int:
         spec.setdefault("slug", path.stem)
         specs.append(spec)
     urls = json.loads(args.urls.read_text()) if args.urls else {}
-    print(render(specs, urls, args.videos, args.title, args.intro, args.footer))
+    timelines, posters = {}, set()
+    if args.build_dir:
+        for spec in specs:
+            slug = spec["slug"]
+            tl_path = args.build_dir / slug / "timeline.json"
+            if not tl_path.exists():
+                print(f"[hub] no timeline for {slug} (not built yet?)", file=sys.stderr)
+                continue
+            timelines[slug] = json.loads(tl_path.read_text())
+            jpg = args.build_dir / f"{slug}.jpg"
+            if args.posters and (args.build_dir / f"{slug}.mp4").exists():
+                make_poster(args.build_dir / f"{slug}.mp4", timelines[slug], jpg)
+            if jpg.exists():
+                posters.add(slug)
+    print(render(specs, urls, args.videos, args.title, args.intro, args.footer, timelines, posters))
     return 0
 
 
