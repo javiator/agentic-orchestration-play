@@ -57,14 +57,19 @@ Read `AGENTS.md` first for the architecture and conventions.
      is slow; those two report expected problems.
    - Check `videos/<slug>/timeline.json` (problems + every narration line) to
      confirm the narration matches what the models actually did.
+   - Narration voice: Kokoro `am_michael` (set per demo with `tts:`/`voice:`
+     in the YAML). The first build downloads the Kokoro model (~350 MB) into
+     `~/.cache/demo-video/`. Check the skill with `selftest.py`.
    - Slide diagrams are inlined in the YAML (they used to be read from each
      exercise's docstring): update them when a docstring diagram changes.
-4. **Updating the hub.** Upload new MP4s to the artifact above as assets. Put
-   their URLs in `demos/hub_videos.json`, then render and republish the page to
-   the same artifact URL:
+4. **Updating the hub.** Upload new MP4s (and the `videos/<slug>.jpg` posters)
+   to the artifact above as assets. Put their URLs in `demos/hub_videos.json`
+   (`slug → url` or `slug → {video, poster}`), then render and republish the
+   page to the same artifact URL. `--build-dir videos --posters` adds posters,
+   durations, clickable chapters and transcripts from each `timeline.json`:
    ```bash
    python3 .claude/skills/demo-video/scripts/hub.py demos/{overview,consensus,router,supervisor,planner,chain,rag,reflection,code-agent,hitl,guardrails,context,eval}.yaml \
-     --urls demos/hub_videos.json --title "Agentic Orchestration Playground — lessons" \
+     --build-dir videos --posters --urls demos/hub_videos.json --title "Agentic Orchestration Playground — lessons" \
      --intro "One narrated video per exercise: the concept, a live demo with real models, and three takeaways. Start with the 3-minute overview, then go in order, or jump to a pattern." \
      --footer "Videos built with the demo-video skill · demos recorded against real models (OpenAI + Gemini)." > hub.html
    ```
