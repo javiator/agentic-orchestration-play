@@ -62,6 +62,8 @@ facts on slides are true for this app.
 slug: router                     # output name (default: file name)
 kicker: "Exercise 2 · My App"    # small label on every slide
 start: /router/                  # first page (relative to --base, or a full URL)
+tts: kokoro                      # optional: kokoro | piper | espeak (default auto)
+voice: am_michael                # optional: voice of that backend
 defaults: {tag: DEMO, wait_caption: "waiting for the models…", hold: 0.8}
 
 concept:                         # slides before the demo; every slide has `say`
@@ -158,9 +160,17 @@ python3 ~/.claude/skills/demo-video/scripts/selftest.py --fresh   # copy + empty
 ## Setup and troubleshooting
 
 - **First run** creates `~/.cache/demo-video/venv` (uv if present, else venv+pip)
-  from `requirements.txt` and downloads the Piper voice `en_US-lessac-medium`
-  from huggingface.co/rhasspy/piper-voices (other voice: `DEMO_VIDEO_VOICE`).
-- **TTS**: `--tts auto` (Piper, else espeak-ng) | `piper` | `espeak`.
+  from `requirements.txt`; the first build downloads the chosen voice model.
+- **TTS** (`--tts`, `--voice`, or `tts:`/`voice:` in the YAML; command line wins):
+  - `kokoro` — most natural, offline; ~350 MB model from the kokoro-onnx releases.
+    Voices: `af_heart` (default), `af_bella`, `am_michael`, `am_fenrir`, `bm_george`, …
+  - `piper` — light and fast, offline; voices from huggingface.co/rhasspy/piper-voices
+    (`en_US-lessac-medium` default, `en_US-ryan-high`, …).
+  - `espeak` — espeak-ng, robotic; last resort.
+  - `auto` = first of kokoro → piper → espeak that loads. To choose a voice with the
+    user, synthesize one paragraph of their narration in 3–5 voices and let them listen.
+- **Audio**: the final mix gets a high-pass, gentle compression and loudness
+  normalization to −16 LUFS (`AUDIO_POLISH` in `assemble.py`).
 - **ffmpeg** with libass is required; build.py checks and explains how to install it.
 - **Chromium**: Playwright's own if it matches; else a system one
   (`/opt/pw-browsers/chromium`, `DEMO_VIDEO_CHROMIUM=/path`); downloads only if none works.

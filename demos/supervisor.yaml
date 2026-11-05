@@ -1,5 +1,7 @@
 slug: supervisor
 kicker: Exercise 3 of 12 · Agentic Orchestration Playground
+tts: kokoro
+voice: am_michael
 start: /supervisor/
 defaults:
   tag: DEMO

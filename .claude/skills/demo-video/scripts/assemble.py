@@ -15,6 +15,10 @@ from pathlib import Path
 
 from common import FPS, OUT_H, OUT_W, run
 
+# Final audio: cut rumble, even out levels gently, then broadcast loudness (-16 LUFS).
+AUDIO_POLISH = ("highpass=f=70,acompressor=threshold=-21dB:ratio=2:attack=5:release=120:makeup=1,"
+                "loudnorm=I=-16:TP=-1.5:LRA=11")
+
 ENC_FAST = ["-c:v", "libx264", "-preset", "veryfast", "-crf", "16", "-pix_fmt", "yuv420p",
             "-c:a", "aac", "-b:a", "128k", "-ar", "48000", "-ac", "2"]
 
@@ -30,13 +34,16 @@ def slide_clip(png: Path, wav: Path | None, seconds: float, out: Path) -> None:
 
 
 def segments(duration: float, fast: list, max_ff_seconds: float = 2.5) -> list[tuple[float, float, float]]:
-    """(start, end, speed) covering the recording; each fast span plays in ≤ max_ff_seconds."""
+    """(start, end, speed) covering the recording; each fast span plays in ≤ max_ff_seconds
+    (or its own third value, e.g. 0.2 s for TTS pauses that should vanish)."""
     segs, cursor = [], 0.0
-    for a, b in sorted(fast):
+    for span in sorted(fast):
+        a, b = span[0], span[1]
+        target = span[2] if len(span) > 2 else max_ff_seconds
         if a <= cursor or b - a < 1:
             continue
         segs.append((cursor, a, 1.0))
-        segs.append((a, b, max(1.0, (b - a) / max_ff_seconds)))
+        segs.append((a, b, max(1.0, (b - a) / target)))
         cursor = b
     segs.append((cursor, duration, 1.0))
     return segs
@@ -127,6 +134,6 @@ def concat_final(parts: list[Path], srt: Path, out: Path, crf: int = 28) -> None
         run(["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", str(listing),
              "-vf", f"subtitles={srt_arg}:force_style='{style}'",
              "-c:v", "libx264", "-preset", "slow", "-crf", str(crf), "-pix_fmt", "yuv420p", "-movflags", "+faststart",
-             "-c:a", "aac", "-b:a", "96k", "-ac", "1", str(out)])
+             "-af", AUDIO_POLISH, "-c:a", "aac", "-b:a", "96k", "-ac", "1", "-ar", "48000", str(out)])
     finally:
         listing.unlink(missing_ok=True)

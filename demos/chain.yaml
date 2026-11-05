@@ -1,5 +1,7 @@
 slug: chain
 kicker: Exercise 5 of 12 · Agentic Orchestration Playground
+tts: kokoro
+voice: am_michael
 start: /chain/
 defaults:
   tag: DEMO

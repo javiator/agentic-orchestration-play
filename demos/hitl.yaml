@@ -1,5 +1,7 @@
 slug: hitl
 kicker: Exercise 9 of 12 · Agentic Orchestration Playground
+tts: kokoro
+voice: am_michael
 start: /hitl/
 defaults:
   tag: DEMO

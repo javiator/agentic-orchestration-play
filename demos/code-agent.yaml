@@ -1,5 +1,7 @@
 slug: code-agent
 kicker: Exercise 8 of 12 · Agentic Orchestration Playground
+tts: kokoro
+voice: am_michael
 start: /code-agent/
 defaults:
   tag: DEMO

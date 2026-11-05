@@ -1,5 +1,7 @@
 slug: reflection
 kicker: Exercise 7 of 12 · Agentic Orchestration Playground
+tts: kokoro
+voice: am_michael
 start: /reflection/
 defaults:
   tag: DEMO

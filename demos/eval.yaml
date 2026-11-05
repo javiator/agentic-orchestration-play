@@ -1,5 +1,7 @@
 slug: eval
 kicker: Exercise 12 of 12 · Agentic Orchestration Playground
+tts: kokoro
+voice: am_michael
 start: /eval/
 defaults:
   tag: DEMO

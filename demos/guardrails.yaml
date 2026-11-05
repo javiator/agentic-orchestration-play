@@ -1,5 +1,7 @@
 slug: guardrails
 kicker: Exercise 10 of 12 · Agentic Orchestration Playground
+tts: kokoro
+voice: am_michael
 start: /guardrails/
 defaults:
   tag: DEMO

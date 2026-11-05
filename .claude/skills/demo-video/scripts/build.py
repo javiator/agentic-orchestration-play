@@ -3,7 +3,8 @@
     python3 build.py DEMO.yaml [DEMO2.yaml ...] --base http://localhost:8000 --out ./videos
         [--dry-run]    screenshots per step + slide PNGs, no TTS, no MP4 (fast review)
         [--reuse]      re-assemble from the last recording (after editing slides/outro)
-        [--tts auto|piper|espeak]   [--css theme.css]
+        [--tts auto|kokoro|piper|espeak] [--voice NAME]   [--css theme.css]
+    A YAML may set `tts:` / `voice:`; the command line wins.
 
 Output, per demo (slug = `slug:` in the YAML, else the file name):
     OUT/<slug>.mp4            1152×720 H.264, narration + burned-in subtitles
@@ -143,14 +144,22 @@ def main() -> int:
     ap.add_argument("--out", type=Path, default=Path("demo-videos"), help="output folder")
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--reuse", action="store_true")
-    ap.add_argument("--tts", default=os.getenv("DEMO_VIDEO_TTS", "auto"))
+    ap.add_argument("--tts", default=os.getenv("DEMO_VIDEO_TTS"), help="auto | kokoro | piper | espeak")
+    ap.add_argument("--voice", default=os.getenv("DEMO_VIDEO_VOICE"), help="e.g. af_heart, en_US-lessac-medium")
     ap.add_argument("--css", type=Path, help="slide theme (default templates/slide.css)")
     args = ap.parse_args()
 
     try:
         check_ffmpeg()
         specs = [load(p) for p in args.demos]
-        narrator = None if args.dry_run else Narrator(args.tts)
+        narrators: dict[tuple, Narrator] = {}
+
+        def narrator_for(spec: dict) -> Narrator:
+            key = (args.tts or spec.get("tts") or "auto", args.voice or spec.get("voice"))
+            if key not in narrators:
+                narrators[key] = Narrator(*key)
+                print(f"  voice: {narrators[key].backend.id}", flush=True)
+            return narrators[key]
     except (SetupError, ValueError, FileNotFoundError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
@@ -164,6 +173,11 @@ def main() -> int:
             if args.dry_run:
                 problems = dry_run(spec, browser, base, args.out, args.css)
             else:
+                try:
+                    narrator = narrator_for(spec)
+                except SetupError as exc:
+                    print(f"error: {exc}", file=sys.stderr)
+                    return 2
                 final = build(spec, browser, narrator, base, args.out, args.reuse, args.css)
                 problems = json.loads((args.out / spec["slug"] / "timeline.json").read_text())["problems"]
                 print(f"  ✓ {final}  {media_duration(final) / 60:.1f} min  {final.stat().st_size / 1e6:.1f} MB")

@@ -1,5 +1,7 @@
 slug: overview
 kicker: Overview · Agentic Orchestration Playground
+tts: kokoro
+voice: am_michael
 start: /
 defaults:
   tag: TOUR

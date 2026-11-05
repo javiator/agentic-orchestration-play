@@ -1,5 +1,7 @@
 slug: rag
 kicker: Exercise 6 of 12 · Agentic Orchestration Playground
+tts: kokoro
+voice: am_michael
 start: /rag/
 defaults:
   tag: DEMO

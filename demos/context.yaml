@@ -1,5 +1,7 @@
 slug: context
 kicker: Exercise 11 of 12 · Agentic Orchestration Playground
+tts: kokoro
+voice: am_michael
 start: /context/
 defaults:
   tag: DEMO

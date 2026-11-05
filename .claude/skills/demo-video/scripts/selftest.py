@@ -53,10 +53,12 @@ def unit() -> None:
     from record import _apply, _tokenize
 
     check(speech_text("Saved -43% in 6/6 runs, 3× faster → done") ==
-          "Saved minus 43% in 6 out of 6 runs, 3 times faster  to  done", "speech clean-up")
+          "Saved minus 43% in 6 out of 6 runs, 3 times faster to done", "speech clean-up")
     toks = _tokenize("a {js:[1].map(x => {return x})} {if:#x}y{else}z{end} {{lit}}")
     check([t for t in toks if t[0] == "tag"] == [("tag", "js:[1].map(x => {return x})"), ("tag", "if:#x"),
                                                   ("tag", "else"), ("tag", "end")], "template tokenizer (nested braces)")
+    check(speech_text("It costs $1.10, e.g. vs ~5 calls") == "It costs 1.10 dollars, for example, versus about 5 calls",
+          "speech clean-up: money, abbreviations")
     check(_apply("Result: 2/6 (detail)", ["before:(", "num"]) == "2", "filters before + num")
     check(_apply("One. Two three four five.", ["max:12"]) == "One.", "max cuts at a sentence end")
     check(_apply("a — b", ["replace: — =>, "]) == "a, b", "replace filter")

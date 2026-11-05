@@ -1,5 +1,7 @@
 slug: consensus
 kicker: Exercise 1 of 12 · Agentic Orchestration Playground
+tts: kokoro
+voice: am_michael
 start: /consensus/
 defaults:
   tag: DEMO

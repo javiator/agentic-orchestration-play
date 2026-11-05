@@ -50,12 +50,17 @@ def create_venv() -> Path:
         uv = shutil.which("uv")
         subprocess.run([uv, "venv", "-q", str(VENV)] if uv else [sys.executable, "-m", "venv", str(VENV)], check=True)
     if _pip(["-r", str(REQS)]):
-        # Piper has native wheels that may not exist for every platform: keep
-        # going without it (narration falls back to espeak-ng).
-        print("[demo-video] full install failed; installing without piper-tts (espeak-ng fallback)", flush=True)
-        rest = [ln for ln in wanted.splitlines() if ln.strip() and not ln.startswith("piper")]
-        if _pip(rest):
+        # The TTS packages have native wheels that may not exist for every
+        # platform: install the core, then each TTS engine on its own (narration
+        # falls back kokoro → piper → espeak-ng).
+        print("[demo-video] full install failed; installing the core and TTS engines one by one", flush=True)
+        reqs = [ln.strip() for ln in wanted.splitlines() if ln.strip() and not ln.startswith("#")]
+        tts = [r for r in reqs if r.startswith(("piper", "kokoro"))]
+        if _pip([r for r in reqs if r not in tts]):
             raise SystemExit("[demo-video] could not install requirements into the venv")
+        for req in tts:
+            if _pip([req]):
+                print(f"[demo-video] skipped {req} (not installable here)", flush=True)
     marker.write_text(wanted)
     return VENV_PY
 

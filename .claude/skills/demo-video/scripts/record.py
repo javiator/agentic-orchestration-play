@@ -295,7 +295,7 @@ class Demo:
             synth_start = self.now()
             wav, dur = self.narrator.say(text)
             if self.now() - synth_start > 1.2:  # uncached TTS: cut the dead air
-                self.fast.append((synth_start + 0.2, self.now()))
+                self.fast.append((synth_start + 0.2, self.now(), 0.2))  # ≈ cut out
         else:  # dry run: no TTS, ~2.6 words/s estimate, don't wait it out
             wav, dur = None, len(text.split()) / 2.6
         tag = spec.get("tag") or self.label
@@ -412,6 +412,6 @@ def record_demo(browser, narrator, base: str, script: dict, outdir: Path, shots:
     offset = max(0.0, media_duration(webm) - elapsed)
     timeline = {"webm": str(webm), "duration": media_duration(webm), "log": demo.log,
                 "narration": [{**n, "t": n["t"] + offset} for n in demo.narration],
-                "fast": [(a + offset, b + offset) for a, b in demo.fast]}
+                "fast": [(f[0] + offset, f[1] + offset, *f[2:]) for f in demo.fast]}
     (outdir / "recording.json").write_text(json.dumps(timeline, indent=1, ensure_ascii=False))
     return timeline

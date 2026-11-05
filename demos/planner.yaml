@@ -1,5 +1,7 @@
 slug: planner
 kicker: Exercise 4 of 12 · Agentic Orchestration Playground
+tts: kokoro
+voice: am_michael
 start: /planner/
 defaults:
   tag: DEMO
